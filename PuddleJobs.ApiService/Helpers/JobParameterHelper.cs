@@ -1,114 +1,62 @@
 using System.Reflection;
 using PuddleJobs.Core;
 using Quartz;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace PuddleJobs.ApiService.Helpers;
 
 public static class JobParameterHelper
 {
-    public static Dictionary<string, object> GetValidatedParameters(IJobExecutionContext context)
+    public static object? ConvertJobParameterValue(string? value, Type targetType)
     {
-        var jobType = context.JobDetail.JobType;
-        var jobData = context.JobDetail.JobDataMap;
-        var result = new Dictionary<string, object>();
+        if (string.IsNullOrEmpty(value))
+            return default;
 
-        // Get parameter attributes from the job type
-        var parameterAttributes = jobType.GetCustomAttributes<JobParameterAttribute>(true);
-
-        foreach (var attr in parameterAttributes)
+        try
         {
-            var value = GetParameterValue(jobData, attr);
-            ValidateParameter(value, attr);
-            result[attr.Name] = value;
-        }
-
-        return result;
-    }
-
-    public static T GetParameter<T>(IJobExecutionContext context, string parameterName, T defaultValue = default!)
-    {
-        var jobData = context.JobDetail.JobDataMap;
-        
-        if (jobData.ContainsKey(parameterName))
-        {
-            var value = jobData[parameterName];
-            if (value != null)
+            return targetType switch
             {
-                return (T)Convert.ChangeType(value, typeof(T));
-            }
+                // Non-nullable types
+                var t when t == typeof(string) => value,
+                var t when t == typeof(char) => char.Parse(value),
+                var t when t == typeof(int) => int.Parse(value),
+                var t when t == typeof(long) => long.Parse(value),
+                var t when t == typeof(double) => double.Parse(value),
+                var t when t == typeof(DateTime) => DateTime.Parse(value),
+                var t when t == typeof(TimeOnly) => TimeOnly.Parse(value),
+                var t when t == typeof(DateOnly) => DateOnly.Parse(value),
+                var t when t == typeof(Guid) => Guid.Parse(value),
+                
+                // Nullable types
+                var t when t == typeof(char?) => char.Parse(value),
+                var t when t == typeof(int?) => int.Parse(value),
+                var t when t == typeof(long?) => long.Parse(value),
+                var t when t == typeof(double?) => double.Parse(value),
+                var t when t == typeof(DateTime?) => DateTime.Parse(value),
+                var t when t == typeof(TimeOnly?) => TimeOnly.Parse(value),
+                var t when t == typeof(DateOnly?) => DateOnly.Parse(value),
+                var t when t == typeof(Guid?) => Guid.Parse(value),
+                
+                _ => throw new InvalidOperationException($"Unsupported type: {targetType.Name}")
+            };
         }
-        
-        return defaultValue;
-    }
-
-    public static T GetRequiredParameter<T>(IJobExecutionContext context, string parameterName)
-    {
-        var jobData = context.JobDetail.JobDataMap;
-        
-        if (!jobData.ContainsKey(parameterName))
+        catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            throw new InvalidOperationException($"Required parameter '{parameterName}' is missing.");
-        }
-        
-        var value = jobData[parameterName];
-        if (value == null)
-        {
-            throw new InvalidOperationException($"Required parameter '{parameterName}' is null.");
-        }
-        
-        return (T)Convert.ChangeType(value, typeof(T));
-    }
-
-    private static object GetParameterValue(JobDataMap jobData, JobParameterAttribute attr)
-    {
-        if (jobData.ContainsKey(attr.Name))
-        {
-            var value = jobData[attr.Name];
-            if (value != null)
-            {
-                return Convert.ChangeType(value, attr.Type);
-            }
-        }
-
-        // Return default value if specified
-        if (attr.DefaultValue != null)
-        {
-            return Convert.ChangeType(attr.DefaultValue, attr.Type);
-        }
-
-        // Return default for the type
-        return attr.Type.IsValueType ? Activator.CreateInstance(attr.Type)! : null!;
-    }
-
-    private static void ValidateParameter(object value, JobParameterAttribute attr)
-    {
-        // Check if required parameter is missing
-        if (attr.Required && value == null)
-        {
-            throw new InvalidOperationException($"Required parameter '{attr.Name}' is missing or null.");
-        }
-
-        if (value == null) return; // Skip validation for null values
-
-        // Type validation
-        if (!attr.Type.IsInstanceOfType(value))
-        {
-            throw new InvalidOperationException($"Parameter '{attr.Name}' has invalid type. Expected {attr.Type.Name}, got {value.GetType().Name}.");
+            throw new InvalidOperationException($"Could not convert '{value}' to type {targetType.Name}. {ex.Message}");
         }
     }
 
-    public static JobParameterInfo[] GetJobParameterInfo(Type jobType)
+    public static object? ConvertJobParameterValue(string? value, string targetType)
     {
-        var attributes = jobType.GetCustomAttributes<JobParameterAttribute>(true);
-        
-        return attributes.Select(attr => new JobParameterInfo
+        if (targetType == null)
         {
-            Name = attr.Name,
-            Type = attr.Type.FullName ?? attr.Type.Name,
-            Required = attr.Required,
-            DefaultValue = attr.DefaultValue?.ToString(),
-            Description = attr.Description
-        }).ToArray();
+            throw new InvalidOperationException($"Unknown type: null");
+        }
+
+        var type = Type.GetType(targetType) 
+            ?? throw new InvalidOperationException($"Unknown type: {targetType}");
+        
+        return ConvertJobParameterValue(value, type);
     }
 }
 

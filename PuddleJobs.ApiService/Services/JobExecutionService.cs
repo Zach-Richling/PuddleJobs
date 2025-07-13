@@ -57,9 +57,9 @@ public class JobExecutionService : IJobExecutionService
         }
     }
 
-    private async Task<Dictionary<string, object>> LoadJobParametersAsync(int jobId)
+    private async Task<Dictionary<string, object?>> LoadJobParametersAsync(int jobId)
     {
-        var result = new Dictionary<string, object>();
+        var result = new Dictionary<string, object?>();
 
         var job = await _context.Jobs
             .Include(j => j.Parameters)
@@ -68,9 +68,9 @@ public class JobExecutionService : IJobExecutionService
             .FirstOrDefaultAsync(j => j.Id == jobId) 
             ?? throw new InvalidOperationException($"Job with ID {jobId} not found.");
 
-        var parameterDefinitions = await _context.AssemblyParameterDefinitions
+        var parameterDefinitions = _context.AssemblyParameterDefinitions
             .Where(pd => pd.AssemblyVersionId == job.Assembly.ActiveVersion.Id)
-            .ToListAsync();
+            .ToList();
 
         foreach (var paramDef in parameterDefinitions)
         {
@@ -78,12 +78,12 @@ public class JobExecutionService : IJobExecutionService
             
             if (dbParameter != null && !string.IsNullOrEmpty(dbParameter.Value))
             {
-                var convertedValue = ConvertParameterValue(dbParameter.Value, paramDef.Type);
+                var convertedValue = JobParameterHelper.ConvertJobParameterValue(dbParameter.Value, paramDef.Type);
                 result[paramDef.Name] = convertedValue;
             }
             else if (!string.IsNullOrEmpty(paramDef.DefaultValue))
             {
-                var convertedValue = ConvertParameterValue(paramDef.DefaultValue, paramDef.Type);
+                var convertedValue = JobParameterHelper.ConvertJobParameterValue(paramDef.DefaultValue, paramDef.Type);
                 result[paramDef.Name] = convertedValue;
             }
             else if (paramDef.Required)
@@ -108,20 +108,5 @@ public class JobExecutionService : IJobExecutionService
             ?? throw new InvalidOperationException($"Failed to create instance of job type '{jobType.Name}'.");
 
         await jobInstance.Execute(context);
-    }
-
-    private static object ConvertParameterValue(string value, string targetType)
-    {
-        try
-        {
-            var type = Type.GetType(targetType)
-                ?? throw new InvalidOperationException($"Unknown parameter type '{targetType}'.");
-
-            return Convert.ChangeType(value, type);
-        } 
-        catch (Exception e)
-        {
-            throw new InvalidOperationException($"Could not deserizlize parameter value: {e.Message}");
-        }
     }
 } 

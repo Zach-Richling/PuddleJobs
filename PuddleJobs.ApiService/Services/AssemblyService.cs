@@ -5,6 +5,8 @@ using PuddleJobs.ApiService.Models;
 using PuddleJobs.ApiService.Helpers;
 using System.Reflection;
 using System;
+using PuddleJobs.Core;
+using System.Xml.Linq;
 
 namespace PuddleJobs.ApiService.Services;
 
@@ -293,7 +295,16 @@ public class AssemblyService : IAssemblyService
                 && typeof(Quartz.IJob).IsAssignableFrom(t))
             .First();
 
-        var parameterDefinitions = JobParameterHelper.GetJobParameterInfo(jobType);
+        var parameterDefinitions = jobType
+            .GetCustomAttributes<JobParameterAttribute>(true)
+            .Select(attr => new JobParameterInfo
+            {
+                Name = attr.Name,
+                Type = attr.Type.AssemblyQualifiedName ?? attr.Type.Name,
+                Required = attr.Required,
+                DefaultValue = attr.DefaultValue?.ToString(),
+                Description = attr.Description
+            });
 
         foreach (var paramDef in parameterDefinitions)
         {

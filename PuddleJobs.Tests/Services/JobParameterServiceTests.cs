@@ -315,7 +315,7 @@ public class JobParameterServiceTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => jobParameterService.SetJobParameterValuesAsync(job.Id, parameters));
 
-        Assert.StartsWith("Invalid value for parameter 'IntParam'", exception.Message);
+        Assert.StartsWith("Could not convert 'NotAnInteger'", exception.Message);
     }
 
     [Fact]

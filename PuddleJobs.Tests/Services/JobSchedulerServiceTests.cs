@@ -80,11 +80,9 @@ public class JobSchedulerServiceTests
 
         // Assert
         var scheduler = await schedulerFactory.GetScheduler();
-        var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-        var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        
-        Assert.Single(jobKeys);
-        Assert.Single(triggerKeys);
+
+        Assert.True(await scheduler.CheckExists(job.JobKey));
+        Assert.True(await scheduler.CheckExists(jobSchedule.TriggerKey));
         
         await scheduler.Shutdown();
     }
@@ -212,6 +210,7 @@ public class JobSchedulerServiceTests
         context.Jobs.Add(job);
         context.Schedules.AddRange(schedule1, schedule2);
         context.JobSchedules.AddRange(jobSchedule1, jobSchedule2);
+        
         await context.SaveChangesAsync();
 
         // Initialize scheduler first
@@ -334,9 +333,12 @@ public class JobSchedulerServiceTests
 
         // Assert
         var scheduler = await schedulerFactory.GetScheduler();
-        var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-        Assert.Single(jobKeys);
-        
+        var triggers = await scheduler.GetTriggersOfJob(job.JobKey);
+        foreach (var trigger in triggers)
+        {
+            var state = await scheduler.GetTriggerState(trigger.Key);
+            Assert.Equal(TriggerState.Paused, state);
+        }
         await scheduler.Shutdown();
     }
 
@@ -375,9 +377,12 @@ public class JobSchedulerServiceTests
 
         // Assert
         var scheduler = await schedulerFactory.GetScheduler();
-        var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-        Assert.Single(jobKeys);
-        
+        var triggers = await scheduler.GetTriggersOfJob(job.JobKey);
+        foreach (var trigger in triggers)
+        {
+            var state = await scheduler.GetTriggerState(trigger.Key);
+            Assert.Equal(TriggerState.Normal, state);
+        }
         await scheduler.Shutdown();
     }
 
@@ -529,9 +534,12 @@ public class JobSchedulerServiceTests
 
         // Assert
         var scheduler = await schedulerFactory.GetScheduler();
-        var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        Assert.Single(triggerKeys);
-        
+        var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(schedule.Id.ToString()));
+        foreach (var triggerKey in triggerKeys)
+        {
+            var state = await scheduler.GetTriggerState(triggerKey);
+            Assert.Equal(TriggerState.Paused, state);
+        }
         await scheduler.Shutdown();
     }
 
@@ -570,9 +578,12 @@ public class JobSchedulerServiceTests
 
         // Assert
         var scheduler = await schedulerFactory.GetScheduler();
-        var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        Assert.Single(triggerKeys);
-        
+        var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(schedule.Id.ToString()));
+        foreach (var triggerKey in triggerKeys)
+        {
+            var state = await scheduler.GetTriggerState(triggerKey);
+            Assert.Equal(TriggerState.Normal, state);
+        }
         await scheduler.Shutdown();
     }
 

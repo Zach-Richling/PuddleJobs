@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
 using PuddleJobs.ApiService.Services;
 using Quartz;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using System.IO.Abstractions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -26,14 +26,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "A .NET job scheduler using Quartz.NET with assembly versioning and parameter management"
     });
-    
-    // Include XML comments if available
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        c.IncludeXmlComments(xmlPath);
-    }
 });
 
 builder.Services.AddDbContext<JobSchedulerDbContext>(options =>
@@ -62,6 +54,7 @@ builder.Services.AddScoped<DatabaseInitializationService>();
 builder.Services.AddScoped<IAssemblyStorageService, LocalAssemblyStorageService>();
 builder.Services.AddScoped<IJobExecutionService, JobExecutionService>();
 builder.Services.AddScoped<IJobSchedulerService, JobSchedulerService>();
+builder.Services.AddSingleton<IFileSystem, FileSystem>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

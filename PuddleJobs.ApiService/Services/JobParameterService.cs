@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
 using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.ApiService.Helpers;
 using PuddleJobs.ApiService.Models;
 
 namespace PuddleJobs.ApiService.Services;
@@ -116,18 +117,7 @@ public class JobParameterService : IJobParameterService
                 // Validate parameter value if provided
                 if (!string.IsNullOrEmpty(providedParam.Value))
                 {
-                    // Try to convert the value to the expected type
-                    var targetType = Type.GetType(definition.Type)
-                        ?? throw new InvalidOperationException($"Unknown parameter type '{definition.Type}' for parameter '{definition.Name}'.");
-
-                    try
-                    {
-                        Convert.ChangeType(providedParam.Value, targetType);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new InvalidOperationException($"Invalid value for parameter '{definition.Name}'. Expected type: {definition.Type}. Error: {ex.Message}");
-                    }
+                    JobParameterHelper.ConvertJobParameterValue(providedParam.Value, definition.Type);
                 }
                 else if (definition.Required)
                 {
