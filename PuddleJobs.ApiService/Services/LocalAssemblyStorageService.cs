@@ -2,21 +2,20 @@ using System.IO;
 using System.IO.Compression;
 using PuddleJobs.ApiService.Models;
 using System.IO.Abstractions;
+using System.Runtime.Loader;
 
 namespace PuddleJobs.ApiService.Services;
 
 public class LocalAssemblyStorageService : IAssemblyStorageService
 {
     private readonly string _baseDirectory;
-    private readonly ILogger<LocalAssemblyStorageService> _logger;
     private readonly IFileSystem _fileSystem;
 
-    public LocalAssemblyStorageService(IConfiguration configuration, ILogger<LocalAssemblyStorageService> logger, IFileSystem fileSystem)
+    public LocalAssemblyStorageService(IConfiguration configuration, IFileSystem fileSystem)
     {
         _baseDirectory = configuration["AssemblyStorage:BasePath"] 
             ?? throw new Exception("AssemblyStorage:BasePath is not configured. Assemblies cannot be saved");
         
-        _logger = logger;
         _fileSystem = fileSystem;
     }
 
@@ -33,9 +32,6 @@ public class LocalAssemblyStorageService : IAssemblyStorageService
             ZipFile.ExtractToDirectory(tempZipPath, assemblyVersionPath);
             _fileSystem.File.Delete(tempZipPath);
             
-            _logger.LogInformation("Extracted assembly {AssemblyName} version {Version} from ZIP to {DirectoryPath}", 
-                assemblyName, version, assemblyVersionPath);
-            
             return assemblyVersionPath;
         }
         catch (Exception)
@@ -49,14 +45,14 @@ public class LocalAssemblyStorageService : IAssemblyStorageService
         }
     }
 
-    public async Task<System.Reflection.Assembly> LoadAssemblyVersionAsync(AssemblyVersion assemblyVersion)
+    public async Task<System.Reflection.Assembly> LoadAssemblyVersionAsync(AssemblyVersion assemblyVersion, AssemblyLoadContext loadContext)
     {
         var fullPath = _fileSystem.Path.Combine(assemblyVersion.DirectoryPath, assemblyVersion.MainAssemblyName);
         if (!_fileSystem.File.Exists(fullPath))
         {
             throw new FileNotFoundException($"Assembly file not found: {fullPath}");
         }
-        
-        return await Task.FromResult(System.Reflection.Assembly.LoadFrom(fullPath));
+
+        return await Task.FromResult(loadContext.LoadFromAssemblyPath(fullPath));
     }
 } 

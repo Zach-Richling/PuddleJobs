@@ -48,29 +48,6 @@ public class JobsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets parameter definitions for a job (from assembly)
-    /// </summary>
-    /// <param name="id">Job ID</param>
-    /// <returns>Parameter definitions</returns>
-    [HttpGet("{id}/parameters")]
-    public async Task<ActionResult<JobParameterInfo[]>> GetJobParameters(int id)
-    {
-        try
-        {
-            var parameters = await _jobService.GetJobParametersAsync(id);
-            return Ok(parameters);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest($"Error loading job parameters: {ex.Message}");
-        }
-    }
-
-    /// <summary>
     /// Gets parameter values for a job
     /// </summary>
     /// <param name="id">Job ID</param>

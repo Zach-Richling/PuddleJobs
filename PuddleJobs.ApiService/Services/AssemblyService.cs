@@ -20,6 +20,7 @@ public interface IAssemblyService
     Task<AssemblyVersionDto?> GetAssemblyVersionAsync(int assemblyId, int versionId);
     Task<bool> DeleteAssemblyAsync(int id);
     Task<AssemblyVersionDto> SetActiveVersionAsync(int assemblyId, int versionId);
+    Task<AssemblyParameterDefintionDto[]> GetAssemblyParametersAsync(int assemblyId);
 }
 
 public class AssemblyService : IAssemblyService
@@ -297,7 +298,7 @@ public class AssemblyService : IAssemblyService
 
         var parameterDefinitions = jobType
             .GetCustomAttributes<JobParameterAttribute>(true)
-            .Select(attr => new JobParameterInfo
+            .Select(attr => new AssemblyParameterDefintionDto
             {
                 Name = attr.Name,
                 Type = attr.Type.AssemblyQualifiedName ?? attr.Type.Name,
@@ -321,5 +322,33 @@ public class AssemblyService : IAssemblyService
 
             assemblyVersion.ParameterDefinitions.Add(dbParamDef);
         }
+    }
+
+    public async Task<AssemblyParameterDefintionDto[]> GetAssemblyParametersAsync(int assemblyId)
+    {
+        var assembly = await _context.Assemblies
+            .Include(a => a.Versions)
+            .FirstOrDefaultAsync(a => a.Id == assemblyId);
+
+        if (assembly == null)
+            throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
+
+        // Get the active version for this assembly
+        var activeVersion = assembly.ActiveVersion;
+
+        // Load parameter definitions from the database for the active version
+        var parameterDefinitions = _context.AssemblyParameterDefinitions
+            .Where(pd => pd.AssemblyVersionId == activeVersion.Id)
+            .ToList();
+
+        // Convert database parameter definitions to AssemblyParameterDefintionDto array
+        return parameterDefinitions.Select(pd => new AssemblyParameterDefintionDto
+        {
+            Name = pd.Name,
+            Type = pd.Type,
+            Description = pd.Description,
+            DefaultValue = pd.DefaultValue,
+            Required = pd.Required
+        }).ToArray();
     }
 } 

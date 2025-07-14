@@ -58,13 +58,4 @@ public static class JobParameterHelper
         
         return ConvertJobParameterValue(value, type);
     }
-}
-
-public class JobParameterInfo
-{
-    public string Name { get; set; } = "";
-    public string Type { get; set; } = "";
-    public bool Required { get; set; }
-    public string? DefaultValue { get; set; }
-    public string? Description { get; set; } = "";
 } 

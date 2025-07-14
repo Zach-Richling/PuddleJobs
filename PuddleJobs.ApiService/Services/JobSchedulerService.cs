@@ -49,13 +49,14 @@ public class JobSchedulerService : IJobSchedulerService
         await scheduler.Clear();
 
         // Load all active job schedules from database
-        var jobSchedules = await _context.JobSchedules
+        var jobSchedules = _context.JobSchedules
             .Include(js => js.Job)
             .Include(js => js.Schedule)
             .Include(js => js.Job.Assembly)
                 .ThenInclude(a => a.Versions)
             .Where(js => js.Job.IsActive && js.Schedule.IsActive)
-            .ToListAsync();
+            .AsSplitQuery()
+            .ToList();
 
         _logger.LogInformation("Found {JobScheduleCount} active job schedules", jobSchedules.Count);
 
@@ -87,7 +88,7 @@ public class JobSchedulerService : IJobSchedulerService
             .Include(js => js.Job.Assembly)
                 .ThenInclude(a => a.Versions)
             .Where(js => js.JobId == jobId && js.Job.IsActive && js.Schedule.IsActive)
-            .ToList();
+            .AsSplitQuery();
 
         foreach (var jobSchedule in jobSchedules)
         {

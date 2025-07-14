@@ -4,12 +4,30 @@ using PuddleJobs.ApiService.Services;
 using Quartz;
 using Microsoft.OpenApi.Models;
 using System.IO.Abstractions;
+using Serilog;
+using Serilog.Events;
+using PuddleJobs.ApiService.Enrichers;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
+
+var consoleMessageTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] [{AssemblyName}] [{ClassName}]: {Message:lj}{NewLine}{Exception}";
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.With<NameEnricher>()
+    .WriteTo.Console(outputTemplate: consoleMessageTemplate)
+    .CreateBootstrapLogger();
+
 builder.AddServiceDefaults();
 
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
+builder.Logging
+    .ClearProviders()
+    .AddSerilog();
 
 builder.Services.AddProblemDetails();
 
@@ -30,6 +48,7 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddDbContext<JobSchedulerDbContext>(options =>
 {
+    options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
     options.UseSqlServer(builder.Configuration.GetConnectionString("jobscheduler"),
     sqlServerOptionsAction: sqlOptions =>
     {
@@ -40,7 +59,10 @@ builder.Services.AddDbContext<JobSchedulerDbContext>(options =>
     });
 });
 
-builder.Services.AddQuartz(q => q.UseTimeZoneConverter());
+builder.Services.AddQuartz(q => 
+{
+    q.UseTimeZoneConverter();
+});
 
 builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
@@ -73,18 +95,37 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "PuddleJobs API v1");
-        c.RoutePrefix = string.Empty; // Serve Swagger UI at the app's root
     });
     
     app.MapOpenApi();
 }
 
-// Initialize database and scheduler
+// Initialize database, database logging, and scheduler
 using (var scope = app.Services.CreateScope())
 {
     var dbInitService = scope.ServiceProvider.GetRequiredService<DatabaseInitializationService>();
     await dbInitService.InitializeDatabaseAsync();
-    
+
+    var loggerConfig = new LoggerConfiguration()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+        .MinimumLevel.Override("System", LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .Enrich.With<NameEnricher>()
+        .WriteTo.MSSqlServer(
+            connectionString: builder.Configuration.GetConnectionString("jobscheduler"),
+            sinkOptions: new Serilog.Sinks.MSSqlServer.MSSqlServerSinkOptions
+            {
+                TableName = "Logs",
+                AutoCreateSqlTable = true
+            });
+
+    if (app.Environment.IsDevelopment())
+    {
+        loggerConfig.WriteTo.Console(outputTemplate: consoleMessageTemplate);
+    }
+
+    Log.Logger = loggerConfig.CreateLogger();
+
     var jobSchedulerService = scope.ServiceProvider.GetRequiredService<IJobSchedulerService>();
     await jobSchedulerService.InitializeSchedulerAsync();
 }
@@ -94,4 +135,15 @@ app.MapControllers();
 
 app.MapDefaultEndpoints();
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

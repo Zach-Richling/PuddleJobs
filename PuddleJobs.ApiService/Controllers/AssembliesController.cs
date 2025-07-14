@@ -129,6 +129,29 @@ public class AssembliesController : ControllerBase
     }
 
     /// <summary>
+    /// Gets parameter definitions for an assembly (from active version)
+    /// </summary>
+    /// <param name="id">Assembly ID</param>
+    /// <returns>Parameter definitions</returns>
+    [HttpGet("{id}/parameters")]
+    public async Task<ActionResult<AssemblyParameterDefintionDto[]>> GetAssemblyParameters(int id)
+    {
+        try
+        {
+            var parameters = await _assemblyService.GetAssemblyParametersAsync(id);
+            return Ok(parameters);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error loading assembly parameters: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Sets a version as the active version for an assembly
     /// </summary>
     /// <param name="id">Assembly ID</param>

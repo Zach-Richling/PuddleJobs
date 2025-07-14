@@ -1,10 +1,11 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using PuddleJobs.ApiService.Data;
 using PuddleJobs.ApiService.Helpers;
+using PuddleJobs.ApiService.Jobs;
 using PuddleJobs.ApiService.Models;
 using Quartz;
+using Serilog.Context;
+using System.Runtime.Loader;
 
 namespace PuddleJobs.ApiService.Services;
 
@@ -16,14 +17,16 @@ public interface IJobExecutionService
 public class JobExecutionService : IJobExecutionService
 {
     private readonly JobSchedulerDbContext _context;
-    private readonly ILogger<JobExecutionService> _logger;
     private readonly IAssemblyStorageService _assemblyStorageService;
+    private readonly ILogger<JobExecutionService> _logger;
+    private readonly ILogger<PuddleJob> _jobLogger;
 
-    public JobExecutionService(JobSchedulerDbContext context, ILogger<JobExecutionService> logger, IAssemblyStorageService assemblyStorageService)
+    public JobExecutionService(JobSchedulerDbContext context, IAssemblyStorageService assemblyStorageService, ILogger<JobExecutionService> logger, ILogger<PuddleJob> jobLogger)
     {
         _context = context;
-        _logger = logger;
         _assemblyStorageService = assemblyStorageService;
+        _logger = logger;
+        _jobLogger = jobLogger;
     }
 
     public async Task ExecuteJobAsync(IJobExecutionContext context)
@@ -31,29 +34,67 @@ public class JobExecutionService : IJobExecutionService
         var jobData = context.JobDetail.JobDataMap;
         var jobId = jobData.GetInt("jobId");
 
-        try
-        {
-            var job = await _context.Jobs
-                .Include(j => j.Assembly)
-                .ThenInclude(a => a.Versions)
-                .FirstOrDefaultAsync(j => j.Id == jobId) 
-                ?? throw new InvalidOperationException($"Job with ID {jobId} not found.");
+        jobData["Logger"] = _jobLogger;
 
-            var activeAssembly = job.Assembly.ActiveVersion;
-            var parameters = await LoadJobParametersAsync(jobId);
-            foreach (var param in parameters)
+        var assemblyContext = new AssemblyLoadContext("MyContext", isCollectible: true);
+
+        using (LogContext.PushProperty("FireInstanceId", context.FireInstanceId))
+        using (LogContext.PushProperty("JobId", jobId))
+        {
+            try
             {
-                jobData[param.Key] = param.Value;
-            }
+                var job = await _context.Jobs
+                    .Include(j => j.Assembly)
+                        .ThenInclude(a => a.Versions)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(j => j.Id == jobId)
+                    ?? throw new InvalidOperationException($"Job with ID {jobId} not found.");
 
-            await ExecuteJobFromAssemblyAsync(activeAssembly, context);
-            
-            _logger.LogInformation("Job {JobId} executed successfully", jobId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error executing job {JobId}", jobId);
-            throw;
+                var activeAssembly = job.Assembly.ActiveVersion;
+                var parameters = await LoadJobParametersAsync(jobId);
+                foreach (var param in parameters.Where(x => x.Value != null))
+                {
+                    jobData[param.Key] = param.Value!;
+                }
+
+                var assembly = await _assemblyStorageService.LoadAssemblyVersionAsync(activeAssembly, assemblyContext);
+
+                var jobType = assembly.GetTypes()
+                    .FirstOrDefault(t => typeof(IJob).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
+                    ?? throw new InvalidOperationException($"No job type implementing Quartz.IJob.");
+
+                var jobInstance = (IJob?)Activator.CreateInstance(jobType)
+                    ?? throw new InvalidOperationException($"Failed to create instance of job type '{jobType.Name}'.");
+
+                try
+                {
+                    await jobInstance.Execute(context);
+                }
+                catch (Exception ex)
+                {
+                    using (LogContext.PushProperty("JobOutcome", 0))
+                    {
+                        _logger.LogError(ex, "Exception during job run");
+                    }
+                    return;
+                }
+
+                using (LogContext.PushProperty("JobOutcome", 1))
+                {
+                    _logger.LogInformation("Job executed successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                using (LogContext.PushProperty("JobOutcome", 0))
+                {
+                    _logger.LogError(ex, "Could not start job");
+                }
+            }
+            finally
+            {
+                assemblyContext.Unload();
+            }
         }
     }
 
@@ -65,6 +106,7 @@ public class JobExecutionService : IJobExecutionService
             .Include(j => j.Parameters)
             .Include(j => j.Assembly)
                 .ThenInclude(a => a.Versions)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(j => j.Id == jobId) 
             ?? throw new InvalidOperationException($"Job with ID {jobId} not found.");
 
@@ -92,21 +134,6 @@ public class JobExecutionService : IJobExecutionService
             }
         }
 
-        _logger.LogInformation("Loaded {ParameterCount} parameters for job {JobId}", result.Count, jobId);
         return result;
-    }
-
-    private async Task ExecuteJobFromAssemblyAsync(AssemblyVersion activeAssembly, IJobExecutionContext context)
-    {
-        var assembly = await _assemblyStorageService.LoadAssemblyVersionAsync(activeAssembly);
-
-        var jobType = assembly.GetTypes()
-            .FirstOrDefault(t => typeof(IJob).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface) 
-            ?? throw new InvalidOperationException($"No job type implementing Quartz.IJob found in assembly '{activeAssembly.MainAssemblyName}'.");
-
-        var jobInstance = (IJob?)Activator.CreateInstance(jobType) 
-            ?? throw new InvalidOperationException($"Failed to create instance of job type '{jobType.Name}'.");
-
-        await jobInstance.Execute(context);
     }
 } 

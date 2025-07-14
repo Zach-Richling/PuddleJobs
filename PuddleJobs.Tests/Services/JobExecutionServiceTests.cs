@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using PuddleJobs.ApiService.Data;
+using PuddleJobs.ApiService.Jobs;
 using PuddleJobs.ApiService.Models;
 using PuddleJobs.ApiService.Services;
 using Quartz;
@@ -16,7 +17,7 @@ namespace PuddleJobs.Tests.Services;
 
 public class JobExecutionServiceTests
 {
-    private JobSchedulerDbContext CreateContext() => new(new DbContextOptionsBuilder<JobSchedulerDbContext>()
+    private static JobSchedulerDbContext CreateContext() => new(new DbContextOptionsBuilder<JobSchedulerDbContext>()
         .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
     private static AssemblyVersion CreateAssemblyVersion(int id, string mainAssemblyName = "Test.dll") => new()
@@ -81,6 +82,7 @@ public class JobExecutionServiceTests
         //Arrange
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
         
         var assembly = CreateAssembly(1);
@@ -114,7 +116,7 @@ public class JobExecutionServiceTests
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { testJobType });
         assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
 
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
         
         // Act
@@ -125,37 +127,41 @@ public class JobExecutionServiceTests
         logger.Verify(l => l.Log(
             LogLevel.Information,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("executed successfully")),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Job executed successfully")),
             null,
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
 
     [Fact]
-    public async Task ExecuteJobAsync_JobNotFound_ThrowsAndLogsError()
+    public async Task ExecuteJobAsync_JobNotFound_LogsError()
     {
         //Arrange
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(999);
 
-        //Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteJobAsync(execContext));
+        //Act
+        await service.ExecuteJobAsync(execContext);
+
+        //Assert
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error executing job")),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Could not start job")),
             It.IsAny<Exception>(),
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
 
     [Fact]
-    public async Task ExecuteJobAsync_NoJobTypeInAssembly_ThrowsAndLogsError()
+    public async Task ExecuteJobAsync_NoJobTypeInAssembly_LogsError()
     {
         // Arrange
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
         
         var assembly = CreateAssembly(1);
@@ -176,25 +182,28 @@ public class JobExecutionServiceTests
         mockAssembly.Setup(a => a.GetTypes()).Returns(Array.Empty<Type>());
         assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
         
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteJobAsync(execContext));
+        // Act
+        await service.ExecuteJobAsync(execContext);
+
+        // Assert
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error executing job")),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Could not start job")),
             It.IsAny<Exception>(),
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
 
     [Fact]
-    public async Task ExecuteJobAsync_JobTypeInstantiationFails_ThrowsAndLogsError()
+    public async Task ExecuteJobAsync_JobTypeInstantiationFails_LogsError()
     {
         //Act
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
         
         var assembly = CreateAssembly(1);
@@ -215,26 +224,29 @@ public class JobExecutionServiceTests
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(AbstractJob) });
         assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
         
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteJobAsync(execContext));
+        // Act
+        await service.ExecuteJobAsync(execContext);
+
+        // Assert
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error executing job")),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Could not start job")),
             It.IsAny<Exception>(),
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
     public abstract class AbstractJob : IJob { public Task Execute(IJobExecutionContext context) => Task.CompletedTask; }
 
     [Fact]
-    public async Task ExecuteJobAsync_JobExecutionThrows_LogsErrorAndRethrows()
+    public async Task ExecuteJobAsync_JobExecutionThrows_LogsError()
     {
         // Arrange
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
         
         var assembly = CreateAssembly(1);
@@ -255,25 +267,28 @@ public class JobExecutionServiceTests
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(FailingJob) });
         assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
         
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteJobAsync(execContext));
+        // Act
+        await service.ExecuteJobAsync(execContext);
+
+        // Assert
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error executing job")),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Exception during job run")),
             It.IsAny<Exception>(),
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
     public class FailingJob : IJob { public Task Execute(IJobExecutionContext context) => throw new InvalidOperationException("fail"); }
 
     [Fact]
-    public async Task ExecuteJobAsync_RequiredParameterMissing_ThrowsAndLogsError()
+    public async Task ExecuteJobAsync_RequiredParameterMissing_LogsError()
     {
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
         
         var assembly = CreateAssembly(1);
@@ -305,27 +320,29 @@ public class JobExecutionServiceTests
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(TestJob) });
         assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
         
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteJobAsync(execContext));
-        
+        // Act
+        await service.ExecuteJobAsync(execContext);
+
+        // Assert
         Assert.DoesNotContain(testGuid, TestJob.ExecutedGuids);
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error executing job")),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Could not start job")),
             It.IsAny<Exception>(),
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
 
     [Fact]
-    public async Task ExecuteJobAsync_ParameterConversionFails_ThrowsAndLogsError()
+    public async Task ExecuteJobAsync_ParameterConversionFails_LogsError()
     {
         // Arrange
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
         
         var assembly = CreateAssembly(1);
@@ -358,26 +375,29 @@ public class JobExecutionServiceTests
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(TestJob) });
         assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
         
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteJobAsync(execContext));
+        // Act
+        await service.ExecuteJobAsync(execContext);
+
+        // Assert
         Assert.DoesNotContain(testGuid, TestJob.ExecutedGuids);
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error executing job")),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Could not start job")),
             It.IsAny<Exception>(),
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
 
     [Fact]
-    public async Task ExecuteJobAsync_AssemblyLoadingFails_ThrowsAndLogsError()
+    public async Task ExecuteJobAsync_AssemblyLoadingFails_LogsError()
     {
         // Arrange
         using var context = CreateContext();
         var logger = new Mock<ILogger<JobExecutionService>>();
+        var jobLogger = new Mock<ILogger<PuddleJob>>();
         var assemblyStorage = new Mock<IAssemblyStorageService>();
         
         var assembly = CreateAssembly(1);
@@ -396,15 +416,17 @@ public class JobExecutionServiceTests
         
         assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ThrowsAsync(new Exception("load fail"));
 
-        var service = new JobExecutionService(context, logger.Object, assemblyStorage.Object);
+        var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() => service.ExecuteJobAsync(execContext));
+        
+        // Act
+        await service.ExecuteJobAsync(execContext);
+        
+        // Assert
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error executing job")),
+            It.IsAny<It.IsAnyType>(),
             It.IsAny<Exception>(),
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }

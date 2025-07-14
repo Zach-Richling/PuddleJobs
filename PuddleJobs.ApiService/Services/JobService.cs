@@ -13,7 +13,6 @@ public interface IJobService
     Task<JobDto> CreateJobAsync(CreateJobDto dto);
     Task<JobDto> UpdateJobAsync(int id, UpdateJobDto dto);
     Task<bool> DeleteJobAsync(int id);
-    Task<JobParameterInfo[]> GetJobParametersAsync(int id);
 }
 
 public class JobService : IJobService
@@ -21,37 +20,37 @@ public class JobService : IJobService
     private readonly JobSchedulerDbContext _context;
     private readonly IJobSchedulerService _jobSchedulerService;
     private readonly IJobParameterService _jobParameterService;
-    private readonly ILogger<JobService> _logger;
 
-    public JobService(JobSchedulerDbContext context, IJobSchedulerService jobSchedulerService, IJobParameterService jobParameterService, ILogger<JobService> logger)
+    public JobService(JobSchedulerDbContext context, IJobSchedulerService jobSchedulerService, IJobParameterService jobParameterService)
     {
         _context = context;
         _jobSchedulerService = jobSchedulerService;
         _jobParameterService = jobParameterService;
-        _logger = logger;
     }
 
     public async Task<IEnumerable<JobDto>> GetAllJobsAsync()
     {
-        var jobs = await _context.Jobs
+        var jobs = _context.Jobs
             .Include(j => j.Assembly)
                 .ThenInclude(a => a.Versions)
             .Include(j => j.JobSchedules)
                 .ThenInclude(js => js.Schedule)
-            .ToListAsync();
-        return jobs.Select(JobDto.Create).ToList();
+            .AsSplitQuery();
+
+        return await Task.FromResult(jobs.Select(JobDto.Create));
     }
 
     public async Task<JobDto?> GetJobByIdAsync(int id)
     {
-        var job = await _context.Jobs
+        var job = _context.Jobs
             .Include(j => j.Assembly)
                 .ThenInclude(a => a.Versions)
             .Include(j => j.JobSchedules)
                 .ThenInclude(js => js.Schedule)
-            .FirstOrDefaultAsync(j => j.Id == id);
+            .AsSplitQuery()
+            .FirstOrDefault(j => j.Id == id);
 
-        return job == null ? null : JobDto.Create(job);
+        return await Task.FromResult(job == null ? null : JobDto.Create(job));
     }
 
     public async Task<JobDto> CreateJobAsync(CreateJobDto dto)
@@ -157,34 +156,5 @@ public class JobService : IJobService
         await _context.SaveChangesAsync();
 
         return true;
-    }
-
-    public async Task<JobParameterInfo[]> GetJobParametersAsync(int id)
-    {
-        var job = await _context.Jobs
-            .Include(j => j.Assembly)
-            .ThenInclude(a => a.Versions)
-            .FirstOrDefaultAsync(j => j.Id == id);
-
-        if (job == null)
-            throw new InvalidOperationException($"Job with ID {id} not found.");
-
-        // Get the active version for this assembly
-        var activeVersion = job.Assembly.ActiveVersion;
-
-        // Load parameter definitions from the database for the active version
-        var parameterDefinitions = await _context.AssemblyParameterDefinitions
-            .Where(pd => pd.AssemblyVersionId == activeVersion.Id)
-            .ToListAsync();
-
-        // Convert database parameter definitions to JobParameterInfo array
-        return parameterDefinitions.Select(pd => new JobParameterInfo
-        {
-            Name = pd.Name,
-            Type = pd.Type,
-            Description = pd.Description,
-            DefaultValue = pd.DefaultValue,
-            Required = pd.Required
-        }).ToArray();
     }
 } 

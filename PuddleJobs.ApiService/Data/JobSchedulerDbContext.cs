@@ -4,18 +4,13 @@ using PuddleJobs.ApiService.Models;
 
 namespace PuddleJobs.ApiService.Data;
 
-public class JobSchedulerDbContext : DbContext
+public class JobSchedulerDbContext(DbContextOptions<JobSchedulerDbContext> options) : DbContext(options)
 {
-    public JobSchedulerDbContext(DbContextOptions<JobSchedulerDbContext> options) : base(options)
-    {
-    }
-
     public DbSet<Assembly> Assemblies { get; set; }
     public DbSet<AssemblyVersion> AssemblyVersions { get; set; }
     public DbSet<Job> Jobs { get; set; }
     public DbSet<Schedule> Schedules { get; set; }
     public DbSet<JobSchedule> JobSchedules { get; set; }
-    public DbSet<ExecutionLog> ExecutionLogs { get; set; }
     public DbSet<JobParameter> JobParameters { get; set; }
     public DbSet<AssemblyParameterDefinition> AssemblyParameterDefinitions { get; set; }
 
@@ -28,59 +23,40 @@ public class JobSchedulerDbContext : DbContext
         modelBuilder.Entity<AssemblyVersion>().HasQueryFilter(av => !av.IsDeleted);
         modelBuilder.Entity<Job>().HasQueryFilter(j => !j.IsDeleted);
         modelBuilder.Entity<Schedule>().HasQueryFilter(s => !s.IsDeleted);
-
+        
         // Configure relationships
         modelBuilder.Entity<Assembly>()
             .HasMany(a => a.Versions)
             .WithOne(v => v.Assembly)
             .HasForeignKey(v => v.AssemblyId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
+            .IsRequired();
 
         modelBuilder.Entity<Assembly>()
             .HasMany(a => a.Jobs)
             .WithOne(j => j.Assembly)
             .HasForeignKey(j => j.AssemblyId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
+            .IsRequired();
 
         modelBuilder.Entity<Job>()
             .HasMany(j => j.JobSchedules)
             .WithOne(js => js.Job)
-            .HasForeignKey(js => js.JobId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Job>()
-            .HasMany(j => j.ExecutionLogs)
-            .WithOne(el => el.Job)
-            .HasForeignKey(el => el.JobId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(js => js.JobId);
 
         modelBuilder.Entity<Job>()
             .HasMany(j => j.Parameters)
             .WithOne(p => p.Job)
             .HasForeignKey(p => p.JobId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Cascade);
+            .IsRequired(false);
 
         modelBuilder.Entity<AssemblyVersion>()
             .HasMany(av => av.ParameterDefinitions)
             .WithOne(pd => pd.AssemblyVersion)
-            .HasForeignKey(pd => pd.AssemblyVersionId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(pd => pd.AssemblyVersionId);
 
         modelBuilder.Entity<Schedule>()
             .HasMany(s => s.JobSchedules)
             .WithOne(js => js.Schedule)
-            .HasForeignKey(js => js.ScheduleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<ExecutionLog>()
-            .HasOne(el => el.Schedule)
-            .WithMany()
-            .HasForeignKey(el => el.ScheduleId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .HasForeignKey(js => js.ScheduleId);
 
         // Configure indexes
         modelBuilder.Entity<Assembly>()
@@ -91,11 +67,6 @@ public class JobSchedulerDbContext : DbContext
             .HasIndex(av => new { av.AssemblyId, av.Version })
             .IsUnique();
 
-        modelBuilder.Entity<AssemblyVersion>()
-            .HasIndex(av => new { av.AssemblyId, av.IsActive })
-            .IsUnique()
-            .HasFilter("[IsActive] = 1"); // Only one active version per assembly
-
         modelBuilder.Entity<Job>()
             .HasIndex(j => j.Name)
             .IsUnique();
@@ -103,12 +74,6 @@ public class JobSchedulerDbContext : DbContext
         modelBuilder.Entity<Schedule>()
             .HasIndex(s => s.Name)
             .IsUnique();
-
-        modelBuilder.Entity<ExecutionLog>()
-            .HasIndex(el => el.StartTime);
-
-        modelBuilder.Entity<ExecutionLog>()
-            .HasIndex(el => new { el.JobId, el.StartTime });
 
         modelBuilder.Entity<JobParameter>()
             .HasIndex(p => new { p.JobId, p.Name })

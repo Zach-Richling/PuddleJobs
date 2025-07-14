@@ -74,11 +74,11 @@ public static class TestDataBuilder
         };
     }
 
-    public static JobParameterInfo[] CreateJobParameterInfos()
+    public static AssemblyParameterDefintionDto[] CreateJobParameterInfos()
     {
         return new[]
         {
-            new JobParameterInfo
+            new AssemblyParameterDefintionDto
             {
                 Name = "RequiredParam",
                 Type = "System.String",
@@ -86,7 +86,7 @@ public static class TestDataBuilder
                 Required = true,
                 DefaultValue = null
             },
-            new JobParameterInfo
+            new AssemblyParameterDefintionDto
             {
                 Name = "OptionalParam",
                 Type = "System.Int32",

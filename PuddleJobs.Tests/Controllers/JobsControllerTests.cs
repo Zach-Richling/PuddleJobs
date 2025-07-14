@@ -108,65 +108,6 @@ public class JobsControllerTests : ControllerTestBase
 
     #endregion
 
-    #region GetJobParameters Tests
-
-    [Fact]
-    public async Task GetJobParameters_ReturnsOkResult_WhenParametersExist()
-    {
-        // Arrange
-        var jobId = 1;
-        var expectedParameters = new[]
-        {
-            new JobParameterInfo { Name = "Param1", Type = "System.String", Required = true },
-            new JobParameterInfo { Name = "Param2", Type = "System.Int32", Required = false }
-        };
-
-        _mockJobService.Setup(x => x.GetJobParametersAsync(jobId))
-            .ReturnsAsync(expectedParameters);
-
-        // Act
-        var result = await _controller.GetJobParameters(jobId);
-
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedParameters = Assert.IsType<JobParameterInfo[]>(okResult.Value);
-        Assert.Equal(expectedParameters.Length, returnedParameters.Length);
-    }
-
-    [Fact]
-    public async Task GetJobParameters_ReturnsBadRequest_WhenJobNotFound()
-    {
-        // Arrange
-        var jobId = 999;
-        _mockJobService.Setup(x => x.GetJobParametersAsync(jobId))
-            .ThrowsAsync(new InvalidOperationException("Job not found"));
-
-        // Act
-        var result = await _controller.GetJobParameters(jobId);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Contains("Job not found", badRequestResult.Value?.ToString());
-    }
-
-    [Fact]
-    public async Task GetJobParameters_ReturnsBadRequest_WhenExceptionOccurs()
-    {
-        // Arrange
-        var jobId = 1;
-        _mockJobService.Setup(x => x.GetJobParametersAsync(jobId))
-            .ThrowsAsync(new Exception("Database error"));
-
-        // Act
-        var result = await _controller.GetJobParameters(jobId);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Contains("Error loading job parameters", badRequestResult.Value?.ToString());
-    }
-
-    #endregion
-
     #region GetJobParameterValues Tests
 
     [Fact]

@@ -24,10 +24,8 @@ public class Job
     public Assembly Assembly { get; set; } = null!;
     
     // Navigation properties
-    public ICollection<JobSchedule> JobSchedules { get; set; } = new List<JobSchedule>();
-    public ICollection<ExecutionLog> ExecutionLogs { get; set; } = new List<ExecutionLog>();
-    public ICollection<JobParameter> Parameters { get; set; } = new List<JobParameter>();
-
+    public ICollection<JobSchedule> JobSchedules { get; set; } = [];
+    public ICollection<JobParameter> Parameters { get; set; } = [];
     public JobKey JobKey => new JobKey($"job_{Id}");
     public static JobKey GetJobKey(int jobId) => new JobKey($"job_{jobId}");
 } 

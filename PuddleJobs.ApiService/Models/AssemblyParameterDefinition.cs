@@ -11,7 +11,7 @@ public class AssemblyParameterDefinition
     public string Name { get; set; } = string.Empty;
     
     [Required]
-    [MaxLength(100)]
+    [MaxLength(1000)]
     public string Type { get; set; } = string.Empty;
     
     [MaxLength(1000)]

@@ -620,6 +620,7 @@ public class JobSchedulerServiceTests
             .Include(js => js.Schedule)
             .Include(js => js.Job.Assembly)
                 .ThenInclude(a => a.Versions)
+            .AsSplitQuery()
             .First(js => js.Id == jobSchedule.Id);
 
         // Act
@@ -668,6 +669,7 @@ public class JobSchedulerServiceTests
             .Include(js => js.Job.Assembly)
                 .ThenInclude(a => a.Versions)
             .Where(js => js.JobId == job.Id)
+            .AsSplitQuery()
             .ToList();
 
         // Act - Create the first job schedule
