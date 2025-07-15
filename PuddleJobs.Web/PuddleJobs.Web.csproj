@@ -2,12 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+
   <ItemGroup>
-    <ProjectReference Include="..\PuddleJobs.ServiceDefaults\PuddleJobs.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\PuddleJobs.Web.Client\PuddleJobs.Web.Client.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.*" />
   </ItemGroup>
 
 </Project>

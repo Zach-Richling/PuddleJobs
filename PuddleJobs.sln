@@ -8,11 +8,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.ServiceDefaults"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.ApiService", "PuddleJobs.ApiService\PuddleJobs.ApiService.csproj", "{BD4E9604-1F21-41CE-A12C-285DA46A87ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Web", "PuddleJobs.Web\PuddleJobs.Web.csproj", "{D13EA8F2-AFAE-4BCE-8BE7-5C596AD3CE11}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Tests", "PuddleJobs.Tests\PuddleJobs.Tests.csproj", "{E8A248E9-026F-4015-9F97-37605B40C7A8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Core", "PuddleJobs.Core\PuddleJobs.Core.csproj", "{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Web", "PuddleJobs.Web\PuddleJobs.Web.csproj", "{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Web.Client", "PuddleJobs.Web.Client\PuddleJobs.Web.Client.csproj", "{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,10 +34,6 @@ Global
 		{BD4E9604-1F21-41CE-A12C-285DA46A87ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD4E9604-1F21-41CE-A12C-285DA46A87ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD4E9604-1F21-41CE-A12C-285DA46A87ED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D13EA8F2-AFAE-4BCE-8BE7-5C596AD3CE11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D13EA8F2-AFAE-4BCE-8BE7-5C596AD3CE11}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D13EA8F2-AFAE-4BCE-8BE7-5C596AD3CE11}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D13EA8F2-AFAE-4BCE-8BE7-5C596AD3CE11}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E8A248E9-026F-4015-9F97-37605B40C7A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E8A248E9-026F-4015-9F97-37605B40C7A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8A248E9-026F-4015-9F97-37605B40C7A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -44,8 +42,19 @@ Global
 		{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5316B78A-29B6-47BE-80FB-1AB52376996B}
 	EndGlobalSection
 EndGlobal

@@ -1,6 +1,5 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Add SQL Server container
 var sqlServer = builder.AddSqlServer("sqlserver")
     .WithDataVolume()
     .AddDatabase("jobscheduler");
