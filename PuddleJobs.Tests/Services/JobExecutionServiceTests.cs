@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -114,7 +115,7 @@ public class JobExecutionServiceTests
         var testJobType = typeof(TestJob);
         var mockAssembly = new Mock<System.Reflection.Assembly>();
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { testJobType });
-        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
+        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version, It.IsAny<AssemblyLoadContext>())).ReturnsAsync(mockAssembly.Object);
 
         var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
@@ -180,7 +181,7 @@ public class JobExecutionServiceTests
 
         var mockAssembly = new Mock<System.Reflection.Assembly>();
         mockAssembly.Setup(a => a.GetTypes()).Returns(Array.Empty<Type>());
-        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
+        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version, It.IsAny<AssemblyLoadContext>())).ReturnsAsync(mockAssembly.Object);
         
         var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
@@ -222,7 +223,7 @@ public class JobExecutionServiceTests
         // Use an abstract type to force instantiation failure
         var mockAssembly = new Mock<System.Reflection.Assembly>();
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(AbstractJob) });
-        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
+        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version, It.IsAny<AssemblyLoadContext>())).ReturnsAsync(mockAssembly.Object);
         
         var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
@@ -265,7 +266,7 @@ public class JobExecutionServiceTests
         
         var mockAssembly = new Mock<System.Reflection.Assembly>();
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(FailingJob) });
-        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
+        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version, It.IsAny<AssemblyLoadContext>())).ReturnsAsync(mockAssembly.Object);
         
         var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
@@ -318,7 +319,7 @@ public class JobExecutionServiceTests
         
         var mockAssembly = new Mock<System.Reflection.Assembly>();
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(TestJob) });
-        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
+        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version, It.IsAny<AssemblyLoadContext>())).ReturnsAsync(mockAssembly.Object);
         
         var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
@@ -373,7 +374,7 @@ public class JobExecutionServiceTests
         
         var mockAssembly = new Mock<System.Reflection.Assembly>();
         mockAssembly.Setup(a => a.GetTypes()).Returns(new[] { typeof(TestJob) });
-        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ReturnsAsync(mockAssembly.Object);
+        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version, It.IsAny<AssemblyLoadContext>())).ReturnsAsync(mockAssembly.Object);
         
         var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);
@@ -414,7 +415,7 @@ public class JobExecutionServiceTests
         
         await context.SaveChangesAsync();
         
-        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version)).ThrowsAsync(new Exception("load fail"));
+        assemblyStorage.Setup(s => s.LoadAssemblyVersionAsync(version, It.IsAny<AssemblyLoadContext>())).ThrowsAsync(new Exception("load fail"));
 
         var service = new JobExecutionService(context, assemblyStorage.Object, logger.Object, jobLogger.Object);
         var execContext = CreateJobExecutionContext(job.Id);

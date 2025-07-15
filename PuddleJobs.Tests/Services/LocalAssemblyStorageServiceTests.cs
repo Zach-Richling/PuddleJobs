@@ -1,4 +1,5 @@
 using System.IO.Abstractions.TestingHelpers;
+using System.Runtime.Loader;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -9,7 +10,6 @@ namespace PuddleJobs.Tests.Services;
 
 public class LocalAssemblyStorageServiceTests
 {
-    private readonly Mock<ILogger<LocalAssemblyStorageService>> _mockLogger = new();
     private readonly string _basePath = "/base";
     private readonly string _assemblyName = "TestAssembly";
     private readonly string _version = "1.0.0";
@@ -23,7 +23,7 @@ public class LocalAssemblyStorageServiceTests
     public async Task SaveAssemblyVersionAsync_ThrowsAndCleansUpOnDirectoryCreateFailure()
     {
         var fs = new MockFileSystem();
-        var service = new LocalAssemblyStorageService(CreateConfig(), _mockLogger.Object, fs);
+        var service = new LocalAssemblyStorageService(CreateConfig(), fs);
         var badPath = "\\badpath";
 
         // Simulate directory create failure by using an invalid path
@@ -34,12 +34,13 @@ public class LocalAssemblyStorageServiceTests
     public async Task LoadAssemblyVersionAsync_FileMissing_ThrowsFileNotFound()
     {
         var fs = new MockFileSystem();
-        var service = new LocalAssemblyStorageService(CreateConfig(), _mockLogger.Object, fs);
+        var alc = new AssemblyLoadContext("Testing", true);
+        var service = new LocalAssemblyStorageService(CreateConfig(), fs);
         var av = new AssemblyVersion
         {
             DirectoryPath = fs.Path.Combine(_basePath, _assemblyName, _version),
             MainAssemblyName = "Test.dll"
         };
-        await Assert.ThrowsAsync<FileNotFoundException>(() => service.LoadAssemblyVersionAsync(av));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => service.LoadAssemblyVersionAsync(av, alc));
     }
 } 

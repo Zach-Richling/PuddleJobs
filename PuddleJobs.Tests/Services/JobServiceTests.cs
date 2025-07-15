@@ -14,14 +14,11 @@ public class JobServiceTests
 {
     private readonly Mock<IJobSchedulerService> _mockJobSchedulerService;
     private readonly Mock<IJobParameterService> _mockJobParameterService;
-    private readonly Mock<ILogger<JobService>> _mockLogger;
-    private readonly JobService _jobService;
 
     public JobServiceTests()
     {
         _mockJobSchedulerService = new Mock<IJobSchedulerService>();
         _mockJobParameterService = new Mock<IJobParameterService>();
-        _mockLogger = new Mock<ILogger<JobService>>();
     }
 
     private JobSchedulerDbContext CreateContext()
@@ -38,8 +35,7 @@ public class JobServiceTests
         return new JobService(
             context,
             _mockJobSchedulerService.Object,
-            _mockJobParameterService.Object,
-            _mockLogger.Object
+            _mockJobParameterService.Object
         );
     }
 
