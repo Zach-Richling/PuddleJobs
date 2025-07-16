@@ -1,0 +1,53 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PuddleJobs.ApiService.Data;
+using PuddleJobs.ApiService.Models;
+using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.ApiService.Jobs;
+
+namespace PuddleJobs.ApiService.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class LogsController(JobSchedulerDbContext context) : ControllerBase
+{
+    private readonly JobSchedulerDbContext _context = context;
+
+    [HttpGet("job/{jobId}")]
+    public async Task<ActionResult<IEnumerable<ExecutionLogDto>>> GetExecutionLogsForJob(int jobId)
+    {
+        var logs = _context.ExecutionLogs
+            .Where(l => l.JobId == jobId)
+            .OrderByDescending(l => l.StartTime);
+
+        var dtos = logs.Select(ExecutionLogDto.Create);
+        
+        return await Task.FromResult(Ok(dtos));
+    }
+
+    [HttpGet("job/{jobId}/latest")]
+    public async Task<ActionResult<ExecutionLogDto>> GetLatestExecutionLogForJob(int jobId)
+    {
+        var log = await _context.ExecutionLogs
+            .Where(l => l.JobId == jobId)
+            .OrderByDescending(l => l.StartTime)
+            .FirstOrDefaultAsync();
+
+        if (log == null)
+            return NotFound();
+
+        return Ok(ExecutionLogDto.Create(log));
+    }
+
+    [HttpGet("execution/{fireInstanceId}")]
+    public async Task<ActionResult<IEnumerable<LogDto>>> GetLogsByFireInstanceId(long fireInstanceId)
+    {
+        var logs = _context.Logs
+            .Where(l => l.FireInstanceId == fireInstanceId &&
+            l.ClassName == nameof(PuddleJob));
+
+        var dtos = logs.Select(LogDto.Create);
+
+        return await Task.FromResult(Ok(dtos));
+    }
+} 

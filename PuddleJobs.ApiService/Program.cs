@@ -8,6 +8,8 @@ using Serilog;
 using Serilog.Events;
 using PuddleJobs.ApiService.Enrichers;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Serilog.Sinks.MSSqlServer;
+using System.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -106,6 +108,19 @@ using (var scope = app.Services.CreateScope())
     var dbInitService = scope.ServiceProvider.GetRequiredService<DatabaseInitializationService>();
     await dbInitService.InitializeDatabaseAsync();
 
+    var logColumns = new ColumnOptions()
+    {
+        AdditionalColumns = new[]
+        {
+            new SqlColumn() { ColumnName = "ClassName" },
+            new SqlColumn() { ColumnName = "FireInstanceId", DataType = SqlDbType.BigInt  }
+        }
+    };
+
+    logColumns.Store.Add(StandardColumn.LogEvent);
+    logColumns.Store.Remove(StandardColumn.Properties);
+    logColumns.TimeStamp.DataType = SqlDbType.DateTime2;
+
     var loggerConfig = new LoggerConfiguration()
         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
         .MinimumLevel.Override("System", LogEventLevel.Warning)
@@ -113,11 +128,13 @@ using (var scope = app.Services.CreateScope())
         .Enrich.With<NameEnricher>()
         .WriteTo.MSSqlServer(
             connectionString: builder.Configuration.GetConnectionString("jobscheduler"),
-            sinkOptions: new Serilog.Sinks.MSSqlServer.MSSqlServerSinkOptions
+            sinkOptions: new MSSqlServerSinkOptions
             {
                 TableName = "Logs",
                 AutoCreateSqlTable = true
-            });
+            },
+            columnOptions: logColumns
+        );
 
     if (app.Environment.IsDevelopment())
     {

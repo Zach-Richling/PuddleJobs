@@ -13,6 +13,8 @@ public class JobSchedulerDbContext(DbContextOptions<JobSchedulerDbContext> optio
     public DbSet<JobSchedule> JobSchedules { get; set; }
     public DbSet<JobParameter> JobParameters { get; set; }
     public DbSet<AssemblyParameterDefinition> AssemblyParameterDefinitions { get; set; }
+    public DbSet<ExecutionLog> ExecutionLogs { get; set; }
+    public DbSet<Log> Logs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +48,19 @@ public class JobSchedulerDbContext(DbContextOptions<JobSchedulerDbContext> optio
             .HasMany(j => j.Parameters)
             .WithOne(p => p.Job)
             .HasForeignKey(p => p.JobId)
+            .IsRequired(false);
+
+        modelBuilder.Entity<Job>()
+            .HasMany(j => j.ExecutionLogs)
+            .WithOne(el => el.Job)
+            .HasForeignKey(el => el.JobId)
+            .IsRequired();
+
+        modelBuilder.Entity<ExecutionLog>()
+            .HasMany(el => el.Logs)
+            .WithOne(l => l.ExecutionLog)
+            .HasForeignKey(l => l.FireInstanceId)
+            .HasPrincipalKey(el => el.FireInstanceId)
             .IsRequired(false);
 
         modelBuilder.Entity<AssemblyVersion>()
@@ -82,5 +97,14 @@ public class JobSchedulerDbContext(DbContextOptions<JobSchedulerDbContext> optio
         modelBuilder.Entity<AssemblyParameterDefinition>()
             .HasIndex(pd => new { pd.AssemblyVersionId, pd.Name })
             .IsUnique();
+
+        modelBuilder.Entity<Log>()
+            .HasIndex(l => l.FireInstanceId);
+
+        modelBuilder.Entity<ExecutionLog>()
+            .HasIndex(el => el.JobId);
+
+        modelBuilder.Entity<ExecutionLog>()
+            .HasIndex(el => el.FireInstanceId);
     }
 } 

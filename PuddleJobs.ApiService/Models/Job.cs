@@ -26,6 +26,7 @@ public class Job
     // Navigation properties
     public ICollection<JobSchedule> JobSchedules { get; set; } = [];
     public ICollection<JobParameter> Parameters { get; set; } = [];
+    public ICollection<ExecutionLog> ExecutionLogs { get; set; } = [];
     public JobKey JobKey => new JobKey($"job_{Id}");
     public static JobKey GetJobKey(int jobId) => new JobKey($"job_{jobId}");
 } 

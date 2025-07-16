@@ -33,14 +33,27 @@ public class JobExecutionService : IJobExecutionService
     {
         var jobData = context.JobDetail.JobDataMap;
         var jobId = jobData.GetInt("jobId");
+        var fireInstanceId = long.Parse(context.FireInstanceId);
 
         jobData["Logger"] = _jobLogger;
 
-        var assemblyContext = new AssemblyLoadContext("MyContext", isCollectible: true);
+        var assemblyContext = new AssemblyLoadContext("UserJobContext", isCollectible: true);
 
-        using (LogContext.PushProperty("FireInstanceId", context.FireInstanceId))
-        using (LogContext.PushProperty("JobId", jobId))
+        var executionLog = new ExecutionLog() 
+        { 
+            FireInstanceId = long.Parse(context.FireInstanceId),
+            JobId = jobId,
+            StartTime = DateTime.UtcNow,
+            Status = "Running"
+        };
+
+        _context.ExecutionLogs.Add(executionLog);
+        await _context.SaveChangesAsync();
+
+        using (LogContext.PushProperty("FireInstanceId", fireInstanceId))
         {
+            _logger.LogInformation("Starting job");
+
             try
             {
                 var job = await _context.Jobs
@@ -48,10 +61,11 @@ public class JobExecutionService : IJobExecutionService
                         .ThenInclude(a => a.Versions)
                     .AsSplitQuery()
                     .FirstOrDefaultAsync(j => j.Id == jobId)
-                    ?? throw new InvalidOperationException($"Job with ID {jobId} not found.");
+                    ?? throw new InvalidOperationException($"Job not found.");
 
                 var activeAssembly = job.Assembly.ActiveVersion;
                 var parameters = await LoadJobParametersAsync(jobId);
+
                 foreach (var param in parameters.Where(x => x.Value != null))
                 {
                     jobData[param.Key] = param.Value!;
@@ -69,31 +83,40 @@ public class JobExecutionService : IJobExecutionService
                 try
                 {
                     await jobInstance.Execute(context);
-                }
-                catch (Exception ex)
+                    executionLog.Status = "Success";
+                    _logger.LogInformation("Job run succeeded");
+                } 
+                catch (Exception e) when (e is TaskCanceledException or OperationCanceledException)
                 {
-                    using (LogContext.PushProperty("JobOutcome", 0))
-                    {
-                        _logger.LogError(ex, "Exception during job run");
-                    }
-                    return;
+                    executionLog.Status = "Cancelled";
+                    _logger.LogInformation("Job run cancelled");
                 }
-
-                using (LogContext.PushProperty("JobOutcome", 1))
+                catch (Exception e)
                 {
-                    _logger.LogInformation("Job executed successfully");
+                    executionLog.Status = "Failed";
+                    _logger.LogError(e, "Exception during job run");
                 }
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                using (LogContext.PushProperty("JobOutcome", 0))
-                {
-                    _logger.LogError(ex, "Could not start job");
-                }
+                executionLog.Status = "Failed";
+                _logger.LogError(e, "Could not start job");
             }
             finally
             {
-                assemblyContext.Unload();
+                executionLog.EndTime = DateTime.UtcNow;
+                try
+                {
+                    await _context.SaveChangesAsync();
+                } 
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Could not save job execution");
+                } 
+                finally
+                {
+                    assemblyContext.Unload();
+                }
             }
         }
     }
