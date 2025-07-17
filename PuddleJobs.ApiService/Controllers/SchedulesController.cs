@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PuddleJobs.ApiService.DTOs;
 using PuddleJobs.ApiService.Models;
@@ -8,6 +9,7 @@ namespace PuddleJobs.ApiService.Controllers;
 /// <summary>
 /// Manages job schedules
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SchedulesController : ControllerBase

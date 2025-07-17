@@ -1,13 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PuddleJobs.ApiService.DTOs;
-using PuddleJobs.ApiService.Services;
 using PuddleJobs.ApiService.Helpers;
+using PuddleJobs.ApiService.Services;
 
 namespace PuddleJobs.ApiService.Controllers;
 
 /// <summary>
 /// Manages jobs and their parameters
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class JobsController : ControllerBase

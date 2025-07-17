@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PuddleJobs.ApiService.DTOs;
 using PuddleJobs.ApiService.Services;
@@ -7,6 +8,7 @@ namespace PuddleJobs.ApiService.Controllers;
 /// <summary>
 /// Manages job assemblies and their versions
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class AssembliesController : ControllerBase

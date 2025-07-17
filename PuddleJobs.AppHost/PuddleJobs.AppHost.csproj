@@ -13,12 +13,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PuddleJobs.ApiService\PuddleJobs.ApiService.csproj" />
-    <ProjectReference Include="..\PuddleJobs.Web\PuddleJobs.Web.csproj" />
+    <ProjectReference Include="..\PuddleJobs.Web\PuddleJobs.Web\PuddleJobs.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
-    <PackageReference Include="Aspire.Hosting.SqlServer" Version="9.0.0" />
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
+    <PackageReference Include="Aspire.Hosting.Keycloak" Version="9.3.1-preview.1.25305.6" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="9.3.2" />
   </ItemGroup>
 
 </Project>

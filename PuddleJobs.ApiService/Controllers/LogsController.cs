@@ -1,12 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.Models;
 using PuddleJobs.ApiService.DTOs;
 using PuddleJobs.ApiService.Jobs;
+using PuddleJobs.ApiService.Models;
 
 namespace PuddleJobs.ApiService.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class LogsController(JobSchedulerDbContext context) : ControllerBase

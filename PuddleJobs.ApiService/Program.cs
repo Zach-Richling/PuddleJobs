@@ -2,14 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
 using PuddleJobs.ApiService.Services;
 using Quartz;
-using Microsoft.OpenApi.Models;
 using System.IO.Abstractions;
 using Serilog;
 using Serilog.Events;
 using PuddleJobs.ApiService.Enrichers;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog.Sinks.MSSqlServer;
 using System.Data;
+using PuddleJobs.ApiService.Extensions;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,19 +38,10 @@ builder.Services.AddControllers();
 
 // Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "PuddleJobs API", 
-        Version = "v1",
-        Description = "A .NET job scheduler using Quartz.NET with assembly versioning and parameter management"
-    });
-});
+builder.Services.AddSwaggerGenWithAuth(builder.Configuration);
 
 builder.Services.AddDbContext<JobSchedulerDbContext>(options =>
 {
-    options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
     options.UseSqlServer(builder.Configuration.GetConnectionString("jobscheduler"),
     sqlServerOptionsAction: sqlOptions =>
     {
@@ -83,6 +74,24 @@ builder.Services.AddSingleton<IFileSystem, FileSystem>();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddAuthentication()
+    .AddKeycloakJwtBearer(
+        serviceName: "keycloak",
+        realm: "puddle-jobs",
+        options =>
+        {
+            options.RequireHttpsMetadata = false;
+            options.Audience = builder.Configuration["Keycloak:Audience"];
+            options.MetadataAddress = builder.Configuration["Keycloak:MetadataAddress"]!;
+            options.TokenValidationParameters = new TokenValidationParameters()
+            {
+                ValidIssuer = builder.Configuration["Keycloak:ValidIssuer"]
+            };
+        }
+    );
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -98,8 +107,14 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "PuddleJobs API v1");
     });
-    
+
     app.MapOpenApi();
+
+    app.MapGet("/", context =>
+    {
+        context.Response.Redirect("/swagger");
+        return Task.CompletedTask;
+    });
 }
 
 // Initialize database, database logging, and scheduler
@@ -147,10 +162,11 @@ using (var scope = app.Services.CreateScope())
     await jobSchedulerService.InitializeSchedulerAsync();
 }
 
-// Map controller endpoints
 app.MapControllers();
-
 app.MapDefaultEndpoints();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 try
 {
