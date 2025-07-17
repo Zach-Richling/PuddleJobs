@@ -12,9 +12,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Tests", "PuddleJ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Core", "PuddleJobs.Core\PuddleJobs.Core.csproj", "{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Web", "PuddleJobs.Web\PuddleJobs.Web.csproj", "{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Web", "PuddleJobs.Web\PuddleJobs.Web\PuddleJobs.Web.csproj", "{5604248F-E0F5-C123-E69D-7E67D6EF1BFF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Web.Client", "PuddleJobs.Web.Client\PuddleJobs.Web.Client.csproj", "{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuddleJobs.Web.Client", "PuddleJobs.Web\PuddleJobs.Web.Client\PuddleJobs.Web.Client.csproj", "{DE296F0B-16CE-A252-1B26-254A1CF6A5B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,14 +42,14 @@ Global
 		{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7358D3A1-65DB-4AD5-84E8-3D724A3E0FD0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2A1A734C-9860-1FE3-8AD0-1F7541C419D1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F281DECE-BA1B-50EF-6F27-4244C98A9D5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5604248F-E0F5-C123-E69D-7E67D6EF1BFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5604248F-E0F5-C123-E69D-7E67D6EF1BFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5604248F-E0F5-C123-E69D-7E67D6EF1BFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5604248F-E0F5-C123-E69D-7E67D6EF1BFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE296F0B-16CE-A252-1B26-254A1CF6A5B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE296F0B-16CE-A252-1B26-254A1CF6A5B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE296F0B-16CE-A252-1B26-254A1CF6A5B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE296F0B-16CE-A252-1B26-254A1CF6A5B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
