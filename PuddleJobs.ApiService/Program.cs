@@ -110,7 +110,7 @@ if (app.Environment.IsDevelopment())
 
     app.MapOpenApi();
 
-    app.MapGet("/", context =>
+    app.MapGet("/index.html", context =>
     {
         context.Response.Redirect("/swagger");
         return Task.CompletedTask;
