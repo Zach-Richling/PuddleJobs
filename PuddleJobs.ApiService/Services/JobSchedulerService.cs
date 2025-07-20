@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.Jobs;
+using PuddleJobs.ApiService.Helpers;
 using PuddleJobs.ApiService.Models;
 using Quartz;
 using Quartz.Impl.Matchers;

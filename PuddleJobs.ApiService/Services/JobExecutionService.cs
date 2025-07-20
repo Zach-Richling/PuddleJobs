@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
 using PuddleJobs.ApiService.Helpers;
-using PuddleJobs.ApiService.Jobs;
 using PuddleJobs.ApiService.Models;
 using Quartz;
 using Serilog.Context;

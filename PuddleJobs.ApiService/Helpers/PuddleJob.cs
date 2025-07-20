@@ -1,7 +1,7 @@
 using PuddleJobs.ApiService.Services;
 using Quartz;
 
-namespace PuddleJobs.ApiService.Jobs;
+namespace PuddleJobs.ApiService.Helpers;
 
 public class PuddleJob(IJobExecutionService jobExecutionService) : IJob
 {
