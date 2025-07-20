@@ -89,6 +89,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder => builder.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader());
+});
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -161,6 +169,8 @@ app.MapDefaultEndpoints();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseCors("AllowAllOrigins");
 
 try
 {
