@@ -12,17 +12,9 @@ var apiService = builder.AddProject<Projects.PuddleJobs_ApiService>("apiservice"
     .WaitFor(sqlServer)
     .WithReference(keycloak)
     .WaitFor(keycloak);
-/*
-builder.AddProject<Projects.PuddleJobs_Web>("webfrontend") 
-    .WithExternalHttpEndpoints()
+
+builder.AddProject<Projects.PuddleJobs_Web>("webfrontend")
     .WithReference(apiService)
     .WaitFor(apiService);
-*/
-builder.AddProject<Projects.BlazorApp2>("blazorapp2");
-/*
-builder.AddProject<Projects.PuddleJobs_Web>("webfrontend") 
-    .WithExternalHttpEndpoints()
-    .WithReference(apiService)
-    .WaitFor(apiService);
-*/
+
 builder.Build().Run();

@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PuddleJobs.ApiService\PuddleJobs.ApiService.csproj" />
+    <ProjectReference Include="..\PuddleJobs.Web\PuddleJobs.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

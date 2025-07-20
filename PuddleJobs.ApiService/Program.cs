@@ -1,15 +1,16 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PuddleJobs.ApiService.Data;
+using PuddleJobs.ApiService.Enrichers;
+using PuddleJobs.ApiService.Extensions;
 using PuddleJobs.ApiService.Services;
 using Quartz;
-using System.IO.Abstractions;
 using Serilog;
 using Serilog.Events;
-using PuddleJobs.ApiService.Enrichers;
 using Serilog.Sinks.MSSqlServer;
 using System.Data;
-using PuddleJobs.ApiService.Extensions;
-using Microsoft.IdentityModel.Tokens;
+using System.IO.Abstractions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,18 +26,13 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(outputTemplate: consoleMessageTemplate)
     .CreateBootstrapLogger();
 
-builder.AddServiceDefaults();
-
 builder.Logging
     .ClearProviders()
     .AddSerilog();
 
+builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
-
-// Add controllers
 builder.Services.AddControllers();
-
-// Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGenWithAuth(builder.Configuration);
 
@@ -74,30 +70,28 @@ builder.Services.AddSingleton<IFileSystem, FileSystem>();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddAuthentication()
-    .AddKeycloakJwtBearer(
-        serviceName: "keycloak",
-        realm: "puddle-jobs",
-        options =>
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.Authority = builder.Configuration["Keycloak:Authority"];
+        options.Audience = builder.Configuration["Keycloak:Audience"];
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            options.RequireHttpsMetadata = false;
-            options.Audience = builder.Configuration["Keycloak:Audience"];
-            options.MetadataAddress = builder.Configuration["Keycloak:MetadataAddress"]!;
-            options.TokenValidationParameters = new TokenValidationParameters()
-            {
-                ValidIssuer = builder.Configuration["Keycloak:ValidIssuer"]
-            };
-        }
-    );
+            ValidIssuer = builder.Configuration["Keycloak:ValidIssuer"],
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true
+        };
+    });
 
+builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 app.UseExceptionHandler();
-
-// Add controller routing
 app.UseRouting();
 
 if (app.Environment.IsDevelopment())

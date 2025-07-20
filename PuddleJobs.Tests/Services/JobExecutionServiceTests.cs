@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.Jobs;
+using PuddleJobs.ApiService.Helpers;
 using PuddleJobs.ApiService.Models;
 using PuddleJobs.ApiService.Services;
 using Quartz;
