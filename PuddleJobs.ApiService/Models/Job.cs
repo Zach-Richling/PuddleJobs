@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using PuddleJobs.Core.DTOs;
 using Quartz;
 
 namespace PuddleJobs.ApiService.Models;
@@ -29,4 +30,19 @@ public class Job
     public ICollection<ExecutionLog> ExecutionLogs { get; set; } = [];
     public JobKey JobKey => new JobKey($"job_{Id}");
     public static JobKey GetJobKey(int jobId) => new JobKey($"job_{jobId}");
+
+    public static JobDto CreateDto(Job job)
+    {
+        return new JobDto() 
+        { 
+            AssemblyId = job.AssemblyId,
+            CreatedAt = job.CreatedAt,
+            Description = job.Description,
+            Id = job.Id,
+            IsActive = job.IsActive,
+            Name = job.Name,
+            Schedules = job.JobSchedules?.Select(js => Schedule.CreateDto(js.Schedule)).ToList() ?? []
+            
+        };
+    }
 } 

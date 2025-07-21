@@ -1,4 +1,4 @@
-namespace PuddleJobs.ApiService.DTOs;
+namespace PuddleJobs.Core.DTOs;
 
 public class JobParameterDto
 {
@@ -15,8 +15,6 @@ public class CreateJobParameterDto
     public string Name { get; set; } = string.Empty;
     public string? Value { get; set; }
 }
-
-
 
 public class JobParameterValueDto
 {

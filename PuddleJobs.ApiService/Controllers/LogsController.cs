@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Helpers;
 using PuddleJobs.ApiService.Models;
 
@@ -20,11 +20,10 @@ public class LogsController(JobSchedulerDbContext context) : ControllerBase
     {
         var logs = _context.ExecutionLogs
             .Where(l => l.JobId == jobId)
-            .OrderByDescending(l => l.StartTime);
-
-        var dtos = logs.Select(ExecutionLogDto.Create);
+            .OrderByDescending(l => l.StartTime)
+            .Select(ExecutionLog.CreateDto);
         
-        return await Task.FromResult(Ok(dtos));
+        return Ok(logs);
     }
 
     [HttpGet("job/{jobId}/latest")]
@@ -38,7 +37,7 @@ public class LogsController(JobSchedulerDbContext context) : ControllerBase
         if (log == null)
             return NotFound();
 
-        return Ok(ExecutionLogDto.Create(log));
+        return Ok(ExecutionLog.CreateDto(log));
     }
 
     [HttpGet("execution/{fireInstanceId}")]
@@ -46,10 +45,9 @@ public class LogsController(JobSchedulerDbContext context) : ControllerBase
     {
         var logs = _context.Logs
             .Where(l => l.FireInstanceId == fireInstanceId &&
-            l.ClassName == nameof(PuddleJob));
+            l.ClassName == nameof(PuddleJob))
+            .Select(Log.CreateDto);
 
-        var dtos = logs.Select(LogDto.Create);
-
-        return await Task.FromResult(Ok(dtos));
+        return Ok(logs);
     }
 } 

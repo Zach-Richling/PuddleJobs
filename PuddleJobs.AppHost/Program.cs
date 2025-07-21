@@ -13,7 +13,7 @@ var apiService = builder.AddProject<Projects.PuddleJobs_ApiService>("apiservice"
     .WithReference(keycloak)
     .WaitFor(keycloak);
 
-builder.AddProject<Projects.PuddleJobs_Web>("webfrontend")
+builder.AddProject<Projects.PuddleJobs_Web>("webfrontend", "https")
     .WithReference(apiService)
     .WaitFor(apiService);
 

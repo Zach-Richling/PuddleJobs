@@ -1,3 +1,4 @@
+using PuddleJobs.Core.DTOs;
 using System.ComponentModel.DataAnnotations;
 
 namespace PuddleJobs.ApiService.Models;
@@ -26,4 +27,16 @@ public class AssemblyParameterDefinition
     
     public int AssemblyVersionId { get; set; }
     public AssemblyVersion? AssemblyVersion { get; set; }
+
+    public static AssemblyParameterDefintionDto CreateDto(AssemblyParameterDefinition definition)
+    {
+        return new AssemblyParameterDefintionDto
+        {
+            Name = definition.Name,
+            Type = definition.Type,
+            Description = definition.Description,
+            DefaultValue = definition.DefaultValue,
+            Required = definition.Required
+        };
+    }
 } 

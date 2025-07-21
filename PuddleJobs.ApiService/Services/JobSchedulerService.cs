@@ -55,10 +55,7 @@ public class JobSchedulerService : IJobSchedulerService
             .Include(js => js.Job.Assembly)
                 .ThenInclude(a => a.Versions)
             .Where(js => js.Job.IsActive && js.Schedule.IsActive)
-            .AsSplitQuery()
-            .ToList();
-
-        _logger.LogInformation("Found {JobScheduleCount} active job schedules", jobSchedules.Count);
+            .AsSplitQuery();
 
         // Create Quartz jobs and triggers
         foreach (var jobSchedule in jobSchedules)

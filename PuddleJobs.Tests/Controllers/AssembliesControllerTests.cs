@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using PuddleJobs.ApiService.Controllers;
-using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Services;
 using PuddleJobs.Tests.TestHelpers;
 using Xunit;

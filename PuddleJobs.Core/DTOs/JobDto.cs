@@ -1,4 +1,4 @@
-namespace PuddleJobs.ApiService.DTOs;
+namespace PuddleJobs.Core.DTOs;
 
 public class JobDto
 {
@@ -9,20 +9,6 @@ public class JobDto
     public DateTime CreatedAt { get; set; }
     public int AssemblyId { get; set; }
     public List<ScheduleDto> Schedules { get; set; } = new();
-
-    public static JobDto Create(Models.Job job)
-    {
-        return new JobDto
-        {
-            Id = job.Id,
-            Name = job.Name,
-            Description = job.Description,
-            IsActive = job.IsActive,
-            CreatedAt = job.CreatedAt,
-            AssemblyId = job.AssemblyId,
-            Schedules = job.JobSchedules?.Select(js => ScheduleDto.Create(js.Schedule)).ToList() ?? new List<ScheduleDto>()
-        };
-    }
 }
 
 public class CreateJobDto

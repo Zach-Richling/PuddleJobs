@@ -1,3 +1,4 @@
+using PuddleJobs.Core.DTOs;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -32,4 +33,19 @@ public class Log
     public long? FireInstanceId { get; set; }
 
     public ExecutionLog? ExecutionLog { get; set; }
+
+    public static LogDto CreateDto(Log log)
+    {
+        return new LogDto
+        {
+            Message = log.Message,
+            MessageTemplate = log.MessageTemplate,
+            Level = log.Level,
+            TimeStamp = log.TimeStamp,
+            Exception = log.Exception,
+            LogEvent = log.LogEvent,
+            ClassName = log.ClassName,
+            FireInstanceId = log.FireInstanceId
+        };
+    }
 } 

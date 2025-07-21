@@ -1,4 +1,4 @@
-namespace PuddleJobs.ApiService.DTOs;
+namespace PuddleJobs.Core.DTOs;
 
 /// <summary>
 /// Information about a job parameter including its name, type, and metadata.

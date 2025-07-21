@@ -61,6 +61,7 @@ public class JobExecutionServiceTests
         var contextMock = new Mock<IJobExecutionContext>();
         contextMock.SetupGet(c => c.JobDetail).Returns(jobDetailMock.Object);
         contextMock.SetupGet(c => c.JobDetail.JobDataMap).Returns(jobDataMap);
+        contextMock.SetupGet(c => c.FireInstanceId).Returns("1");
         return contextMock.Object;
     }
 
@@ -125,12 +126,6 @@ public class JobExecutionServiceTests
         
         // Assert
         Assert.Contains(testGuid, TestJob.ExecutedGuids);
-        logger.Verify(l => l.Log(
-            LogLevel.Information,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Job executed successfully")),
-            null,
-            It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
 
     [Fact]

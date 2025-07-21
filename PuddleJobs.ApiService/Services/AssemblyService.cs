@@ -1,12 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Models;
-using PuddleJobs.ApiService.Helpers;
 using System.Reflection;
-using System;
 using PuddleJobs.Core;
-using System.Xml.Linq;
+
+using Assembly = PuddleJobs.ApiService.Models.Assembly;
 
 namespace PuddleJobs.ApiService.Services;
 
@@ -20,7 +19,7 @@ public interface IAssemblyService
     Task<AssemblyVersionDto?> GetAssemblyVersionAsync(int assemblyId, int versionId);
     Task<bool> DeleteAssemblyAsync(int id);
     Task<AssemblyVersionDto> SetActiveVersionAsync(int assemblyId, int versionId);
-    Task<AssemblyParameterDefintionDto[]> GetAssemblyParametersAsync(int assemblyId);
+    Task<IEnumerable<AssemblyParameterDefintionDto>> GetAssemblyParametersAsync(int assemblyId);
 }
 
 public class AssemblyService : IAssemblyService
@@ -36,13 +35,7 @@ public class AssemblyService : IAssemblyService
 
     public async Task<IEnumerable<AssemblyDto>> GetAllAssembliesAsync()
     {
-        return await _context.Assemblies.Select(a => new AssemblyDto
-        {
-            Id = a.Id,
-            Name = a.Name,
-            Description = a.Description,
-            CreatedAt = a.CreatedAt
-        }).ToListAsync();
+        return _context.Assemblies.Select(Assembly.CreateDto);
     }
 
     public async Task<AssemblyDto?> GetAssemblyByIdAsync(int id)
@@ -53,13 +46,7 @@ public class AssemblyService : IAssemblyService
         if (assembly == null)
             return null;
 
-        return new AssemblyDto
-        {
-            Id = assembly.Id,
-            Name = assembly.Name,
-            Description = assembly.Description,
-            CreatedAt = assembly.CreatedAt
-        };
+        return Assembly.CreateDto(assembly);
     }
 
     public async Task<AssemblyDto> CreateAssemblyAsync(CreateAssemblyDto dto, byte[] zipFile)
@@ -70,7 +57,7 @@ public class AssemblyService : IAssemblyService
             throw new InvalidOperationException($"Assembly with name '{dto.Name}' already exists.");
         }
 
-        var assembly = new Models.Assembly
+        var assembly = new Assembly
         {
             Name = dto.Name,
             Description = dto.Description,
@@ -87,23 +74,15 @@ public class AssemblyService : IAssemblyService
 
         await CreateAssemblyVersionAsync(assembly, assemblyVersionDto, zipFile);
 
-        return new AssemblyDto
-        {
-            Id = assembly.Id,
-            Name = assembly.Name,
-            Description = assembly.Description,
-            CreatedAt = assembly.CreatedAt
-        };
+        return Assembly.CreateDto(assembly);
     }
 
     public async Task<AssemblyVersionDto> CreateAssemblyVersionAsync(int assemblyId, CreateAssemblyVersionDto dto, byte[] zipData)
     {
         var assembly = await _context.Assemblies
             .Include(a => a.Versions)
-            .FirstOrDefaultAsync(a => a.Id == assemblyId);
-
-        if (assembly == null)
-            throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
+            .FirstOrDefaultAsync(a => a.Id == assemblyId) 
+            ?? throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
 
         // Check if version already exists
         if (assembly.Versions.Any(v => v.Version == dto.Version))
@@ -114,7 +93,7 @@ public class AssemblyService : IAssemblyService
         return await CreateAssemblyVersionAsync(assembly, dto, zipData);
     }
 
-    private async Task<AssemblyVersionDto> CreateAssemblyVersionAsync(Models.Assembly assembly, CreateAssemblyVersionDto dto, byte[] zipData)
+    private async Task<AssemblyVersionDto> CreateAssemblyVersionAsync(Assembly assembly, CreateAssemblyVersionDto dto, byte[] zipData)
     {
         // Validate the ZIP contains a valid assembly
         if (!IsValidJobAssemblyFromZip(zipData, dto.MainAssemblyName, out var validAssembly))
@@ -141,34 +120,15 @@ public class AssemblyService : IAssemblyService
 
         await _context.SaveChangesAsync();
 
-        return new AssemblyVersionDto
-        {
-            Id = assemblyVersion.Id,
-            Version = assemblyVersion.Version,
-            FileName = assemblyVersion.MainAssemblyName,
-            UploadedAt = assemblyVersion.UploadedAt,
-            ChangeNotes = assemblyVersion.ChangeNotes,
-            AssemblyId = assemblyVersion.AssemblyId,
-            IsActive = assemblyVersion.IsActive
-        };
+        return AssemblyVersion.CreateDto(assemblyVersion);
     }
 
     public async Task<IEnumerable<AssemblyVersionDto>> GetAssemblyVersionsAsync(int assemblyId)
     {
-        return await _context.AssemblyVersions
+        return _context.AssemblyVersions
             .Where(av => av.AssemblyId == assemblyId)
             .OrderByDescending(av => av.UploadedAt)
-            .Select(av => new AssemblyVersionDto
-            {
-                Id = av.Id,
-                Version = av.Version,
-                FileName = av.MainAssemblyName,
-                UploadedAt = av.UploadedAt,
-                ChangeNotes = av.ChangeNotes,
-                AssemblyId = av.AssemblyId,
-                IsActive = av.IsActive
-            })
-            .ToListAsync();
+            .Select(AssemblyVersion.CreateDto);
     }
 
     public async Task<AssemblyVersionDto?> GetAssemblyVersionAsync(int assemblyId, int versionId)
@@ -179,30 +139,18 @@ public class AssemblyService : IAssemblyService
         if (assemblyVersion == null)
             return null;
 
-        return new AssemblyVersionDto
-        {
-            Id = assemblyVersion.Id,
-            Version = assemblyVersion.Version,
-            FileName = assemblyVersion.MainAssemblyName,
-            UploadedAt = assemblyVersion.UploadedAt,
-            ChangeNotes = assemblyVersion.ChangeNotes,
-            AssemblyId = assemblyVersion.AssemblyId,
-            IsActive = assemblyVersion.IsActive
-        };
+        return AssemblyVersion.CreateDto(assemblyVersion);
     }
 
     public async Task<AssemblyVersionDto> SetActiveVersionAsync(int assemblyId, int versionId)
     {
         var assembly = await _context.Assemblies
             .Include(a => a.Versions)
-            .FirstOrDefaultAsync(a => a.Id == assemblyId);
+            .FirstOrDefaultAsync(a => a.Id == assemblyId) 
+            ?? throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
 
-        if (assembly == null)
-            throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
-
-        var targetVersion = assembly.Versions.FirstOrDefault(v => v.Id == versionId);
-        if (targetVersion == null)
-            throw new InvalidOperationException($"Version with ID {versionId} not found for assembly '{assembly.Name}'.");
+        var targetVersion = assembly.Versions.FirstOrDefault(v => v.Id == versionId) 
+            ?? throw new InvalidOperationException($"Version with ID {versionId} not found for assembly '{assembly.Name}'.");
 
         // Deactivate all other versions for this assembly
         foreach (var version in assembly.Versions)
@@ -215,16 +163,7 @@ public class AssemblyService : IAssemblyService
 
         await _context.SaveChangesAsync();
 
-        return new AssemblyVersionDto
-        {
-            Id = targetVersion.Id,
-            Version = targetVersion.Version,
-            FileName = targetVersion.MainAssemblyName,
-            UploadedAt = targetVersion.UploadedAt,
-            ChangeNotes = targetVersion.ChangeNotes,
-            AssemblyId = targetVersion.AssemblyId,
-            IsActive = targetVersion.IsActive
-        };
+        return AssemblyVersion.CreateDto(targetVersion);
     }
 
     public async Task<bool> DeleteAssemblyAsync(int id)
@@ -245,6 +184,7 @@ public class AssemblyService : IAssemblyService
         assembly.IsDeleted = true;
         assembly.DeletedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -324,31 +264,15 @@ public class AssemblyService : IAssemblyService
         }
     }
 
-    public async Task<AssemblyParameterDefintionDto[]> GetAssemblyParametersAsync(int assemblyId)
+    public async Task<IEnumerable<AssemblyParameterDefintionDto>> GetAssemblyParametersAsync(int assemblyId)
     {
         var assembly = await _context.Assemblies
             .Include(a => a.Versions)
-            .FirstOrDefaultAsync(a => a.Id == assemblyId);
+            .FirstOrDefaultAsync(a => a.Id == assemblyId) 
+            ?? throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
 
-        if (assembly == null)
-            throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
-
-        // Get the active version for this assembly
-        var activeVersion = assembly.ActiveVersion;
-
-        // Load parameter definitions from the database for the active version
-        var parameterDefinitions = _context.AssemblyParameterDefinitions
-            .Where(pd => pd.AssemblyVersionId == activeVersion.Id)
-            .ToList();
-
-        // Convert database parameter definitions to AssemblyParameterDefintionDto array
-        return parameterDefinitions.Select(pd => new AssemblyParameterDefintionDto
-        {
-            Name = pd.Name,
-            Type = pd.Type,
-            Description = pd.Description,
-            DefaultValue = pd.DefaultValue,
-            Required = pd.Required
-        }).ToArray();
+        return _context.AssemblyParameterDefinitions
+            .Where(pd => pd.AssemblyVersionId == assembly.ActiveVersion.Id)
+            .Select(AssemblyParameterDefinition.CreateDto);
     }
 } 

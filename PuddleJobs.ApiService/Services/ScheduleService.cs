@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Models;
 
 namespace PuddleJobs.ApiService.Services;
@@ -39,7 +39,8 @@ public class ScheduleService : IScheduleService
         var schedules = await _context.Schedules
             .Include(s => s.JobSchedules)
             .ToListAsync();
-        return schedules.Select(ScheduleDto.Create);
+
+        return schedules.Select(Schedule.CreateDto);
     }
 
     public async Task<ScheduleDto?> GetScheduleByIdAsync(int id)
@@ -48,13 +49,11 @@ public class ScheduleService : IScheduleService
             .Include(s => s.JobSchedules)
             .FirstOrDefaultAsync(s => s.Id == id);
 
-        return schedule == null ? null : ScheduleDto.Create(schedule);
+        return schedule == null ? null : Schedule.CreateDto(schedule);
     }
 
     public async Task<ScheduleDto> CreateScheduleAsync(CreateScheduleDto dto)
     {
-        Console.WriteLine("Got here");
-        // Validate Cron expression
         var validationResult = _cronValidationService.ValidateCronExpression(dto.CronExpression);
         if (!validationResult.IsValid)
         {
@@ -125,7 +124,7 @@ public class ScheduleService : IScheduleService
     {
         var schedule = _context.Schedules.FirstOrDefault(s => s.Id == scheduleId);
         if (schedule == null)
-            return Enumerable.Empty<DateTime>();
+            return [];
 
         return _cronValidationService.GetNextExecutionTimes(schedule.CronExpression, count);
     }
@@ -137,21 +136,17 @@ public class ScheduleService : IScheduleService
 
     public async Task PauseScheduleAsync(int scheduleId)
     {
-        var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId);
-        if (schedule == null)
-            throw new InvalidOperationException($"Schedule with ID {scheduleId} not found.");
+        var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId) 
+            ?? throw new InvalidOperationException($"Schedule with ID {scheduleId} not found.");
 
-        // Pause Quartz triggers for this schedule
         await _jobSchedulerService.PauseScheduleAsync(scheduleId);
     }
 
     public async Task ResumeScheduleAsync(int scheduleId)
     {
-        var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId);
-        if (schedule == null)
-            throw new InvalidOperationException($"Schedule with ID {scheduleId} not found.");
+        var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId) 
+            ?? throw new InvalidOperationException($"Schedule with ID {scheduleId} not found.");
 
-        // Resume Quartz triggers for this schedule
         await _jobSchedulerService.ResumeScheduleAsync(scheduleId);
     }
 } 

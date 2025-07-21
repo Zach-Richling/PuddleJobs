@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Helpers;
 using PuddleJobs.ApiService.Models;
 
@@ -27,19 +27,9 @@ public class JobParameterService : IJobParameterService
         var job = await _context.Jobs.FindAsync(jobId) 
             ?? throw new InvalidOperationException($"Job with ID {jobId} not found.");
 
-        var parameters = _context.JobParameters
+        return _context.JobParameters
             .Where(p => p.JobId == jobId)
-            .Select(p => new JobParameterDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Value = p.Value,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt,
-                JobId = p.JobId
-            }).ToList();
-
-        return parameters;
+            .Select(JobParameter.CreateDto);
     }
 
     public async Task<bool> SetJobParameterValuesAsync(int jobId, IEnumerable<JobParameterValueDto> parameters)
@@ -89,10 +79,8 @@ public class JobParameterService : IJobParameterService
         // Get the assembly with its active version
         var assembly = await _context.Assemblies
             .Include(a => a.Versions)
-            .FirstOrDefaultAsync(a => a.Id == assemblyId);
-
-        if (assembly == null)
-            throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
+            .FirstOrDefaultAsync(a => a.Id == assemblyId) 
+            ?? throw new InvalidOperationException($"Assembly with ID {assemblyId} not found.");
 
         if (assembly.ActiveVersion == null)
             throw new InvalidOperationException($"Assembly {assemblyId} has no active version.");

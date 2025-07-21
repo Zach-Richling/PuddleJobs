@@ -1,3 +1,4 @@
+using PuddleJobs.Core.DTOs;
 using System.ComponentModel.DataAnnotations;
 
 namespace PuddleJobs.ApiService.Models;
@@ -26,4 +27,17 @@ public class Schedule
     
     // Navigation properties
     public ICollection<JobSchedule> JobSchedules { get; set; } = new List<JobSchedule>();
+
+    public static ScheduleDto CreateDto(Schedule schedule)
+    {
+        return new ScheduleDto
+        {
+            Id = schedule.Id,
+            Name = schedule.Name,
+            Description = schedule.Description,
+            CronExpression = schedule.CronExpression,
+            IsActive = schedule.IsActive,
+            CreatedAt = schedule.CreatedAt
+        };
+    }
 } 

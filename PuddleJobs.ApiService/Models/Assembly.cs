@@ -1,3 +1,4 @@
+using PuddleJobs.Core.DTOs;
 using System.ComponentModel.DataAnnotations;
 
 namespace PuddleJobs.ApiService.Models;
@@ -23,4 +24,15 @@ public class Assembly
     // Navigation properties
     public ICollection<AssemblyVersion> Versions { get; set; } = new List<AssemblyVersion>();
     public ICollection<Job> Jobs { get; set; } = new List<Job>();
+
+    public static AssemblyDto CreateDto(Assembly assembly)
+    {
+        return new AssemblyDto
+        {
+            Id = assembly.Id,
+            Name = assembly.Name,
+            Description = assembly.Description,
+            CreatedAt = assembly.CreatedAt
+        };
+    }
 } 

@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Moq;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Models;
 using PuddleJobs.ApiService.Services;
 using PuddleJobs.Tests.TestHelpers;
@@ -192,7 +191,7 @@ public class ScheduleServiceTests
         context.Schedules.Add(existingSchedule);
         await context.SaveChangesAsync();
 
-        _mockCronValidationService.Setup(x => x.ValidateCronExpression(updateDto.CronExpression))
+        _mockCronValidationService.Setup(x => x.ValidateCronExpression(updateDto.CronExpression!))
             .Returns(TestDataBuilder.CreateCronValidationResult(true));
 
         _mockJobSchedulerService.Setup(x => x.UpdateScheduleAsync(scheduleId))
@@ -212,7 +211,7 @@ public class ScheduleServiceTests
         Assert.NotNull(updatedSchedule);
         Assert.Equal(updateDto.Description, updatedSchedule.Description);
 
-        _mockCronValidationService.Verify(x => x.ValidateCronExpression(updateDto.CronExpression), Times.Once);
+        _mockCronValidationService.Verify(x => x.ValidateCronExpression(updateDto.CronExpression!), Times.Once);
         _mockJobSchedulerService.Verify(x => x.UpdateScheduleAsync(scheduleId), Times.Once);
     }
 

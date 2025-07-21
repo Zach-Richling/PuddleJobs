@@ -1,4 +1,4 @@
-namespace PuddleJobs.ApiService.DTOs;
+namespace PuddleJobs.Core.DTOs;
 
 public class AssemblyDto
 {

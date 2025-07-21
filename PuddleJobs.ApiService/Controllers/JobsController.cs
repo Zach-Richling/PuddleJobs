@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PuddleJobs.ApiService.DTOs;
-using PuddleJobs.ApiService.Helpers;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Services;
 
 namespace PuddleJobs.ApiService.Controllers;

@@ -1,5 +1,4 @@
-using PuddleJobs.ApiService.DTOs;
-using PuddleJobs.ApiService.Helpers;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Models;
 
 namespace PuddleJobs.Tests.TestHelpers;

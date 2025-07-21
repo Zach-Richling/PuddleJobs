@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
-using PuddleJobs.ApiService.DTOs;
+using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Models;
-using PuddleJobs.ApiService.Helpers;
 
 namespace PuddleJobs.ApiService.Services;
 
@@ -30,27 +29,28 @@ public class JobService : IJobService
 
     public async Task<IEnumerable<JobDto>> GetAllJobsAsync()
     {
-        var jobs = _context.Jobs
-            .Include(j => j.Assembly)
-                .ThenInclude(a => a.Versions)
-            .Include(j => j.JobSchedules)
-                .ThenInclude(js => js.Schedule)
-            .AsSplitQuery();
-
-        return await Task.FromResult(jobs.Select(JobDto.Create));
-    }
-
-    public async Task<JobDto?> GetJobByIdAsync(int id)
-    {
-        var job = _context.Jobs
+        var jobs = await _context.Jobs
             .Include(j => j.Assembly)
                 .ThenInclude(a => a.Versions)
             .Include(j => j.JobSchedules)
                 .ThenInclude(js => js.Schedule)
             .AsSplitQuery()
-            .FirstOrDefault(j => j.Id == id);
+            .ToListAsync();
 
-        return await Task.FromResult(job == null ? null : JobDto.Create(job));
+        return jobs.Select(Job.CreateDto);
+    }
+
+    public async Task<JobDto?> GetJobByIdAsync(int id)
+    {
+        var job = await _context.Jobs
+            .Include(j => j.Assembly)
+                .ThenInclude(a => a.Versions)
+            .Include(j => j.JobSchedules)
+                .ThenInclude(js => js.Schedule)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(j => j.Id == id);
+
+        return job == null ? null : Job.CreateDto(job);
     }
 
     public async Task<JobDto> CreateJobAsync(CreateJobDto dto)

@@ -1,3 +1,4 @@
+using PuddleJobs.Core.DTOs;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -21,4 +22,16 @@ public class ExecutionLog
     public string Status { get; set; } = "Running";
 
     public ICollection<Log> Logs { get; set; } = [];
+
+    public static ExecutionLogDto CreateDto(ExecutionLog executionLog)
+    {
+        return new ExecutionLogDto
+        {
+            JobId = executionLog.JobId,
+            FireInstanceId = executionLog.FireInstanceId,
+            StartTime = executionLog.StartTime,
+            EndTime = executionLog.EndTime,
+            Status = executionLog.Status
+        };
+    }
 } 

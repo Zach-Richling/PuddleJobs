@@ -1,3 +1,4 @@
+using PuddleJobs.Core.DTOs;
 using System.ComponentModel.DataAnnotations;
 
 namespace PuddleJobs.ApiService.Models;
@@ -19,4 +20,17 @@ public class JobParameter
     // Foreign key
     public int JobId { get; set; }
     public Job Job { get; set; } = null!;
+
+    public static JobParameterDto CreateDto(JobParameter jobParameter)
+    {
+        return new JobParameterDto
+        {
+            Id = jobParameter.Id,
+            Name = jobParameter.Name,
+            Value = jobParameter.Value,
+            CreatedAt = jobParameter.CreatedAt,
+            UpdatedAt = jobParameter.UpdatedAt,
+            JobId = jobParameter.JobId
+        };
+    }
 } 
