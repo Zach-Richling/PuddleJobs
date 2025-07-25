@@ -1,5 +1,6 @@
 using Quartz;
 using PuddleJobs.ApiService.Models;
+using PuddleJobs.Core;
 
 namespace PuddleJobs.ApiService.Services;
 

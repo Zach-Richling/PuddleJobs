@@ -1,0 +1,270 @@
+﻿@using CronExpressionDescriptor
+@using PuddleJobs.Web.Services
+@using PuddleJobs.Core
+
+<MudPaper Elevation="1" Class="border-1 border-dashed">
+    <MudExpansionPanels Elevation="0" MultiExpansion="false">
+        <MudExpansionPanel Text="🛠️ Cron Expression Builder" Expanded=@panelExpanded>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" Label="Frequency" @bind-Value="SelectedFrequency" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression">
+                        <MudSelectItem Value="@("minute")">Minute</MudSelectItem>
+                        <MudSelectItem Value="@("hour")">Hourly</MudSelectItem>
+                        <MudSelectItem Value="@("day")">Daily</MudSelectItem>
+                        <MudSelectItem Value="@("week")">Weekly</MudSelectItem>
+                        <MudSelectItem Value="@("month")">Monthly</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                @if (SelectedFrequency == "hour")
+                {
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string" Label="Hour Selection" @bind-Value="HourlyType" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression">
+                            <MudSelectItem Value='"every"'>Every Hour</MudSelectItem>
+                            <MudSelectItem Value='"interval"'>Every X Hours</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    @if (HourlyType == "interval")
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudNumericField T="int" Label="Every X Hours" @bind-Value="HourInterval" Min="1" Max="23" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                        </MudItem>
+                    }
+                    <MudItem xs="12" md="6">
+                        <MudNumericField T="int" Label="At Minute" @bind-Value="AtMinute" Min="0" Max="59" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                }
+
+                @if (SelectedFrequency == "day")
+                {
+                    <MudItem xs="12" md="3">
+                        <MudNumericField T="int" Label="At Hour" @bind-Value="AtHour" Min="0" Max="23" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudNumericField T="int" Label="At Minute" @bind-Value="AtMinute" Min="0" Max="59" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                }
+
+                @if (SelectedFrequency == "week")
+                {
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string" Label="Days of Week" @bind-SelectedValues="SelectedDaysOfWeek" 
+                                  Variant="Variant.Outlined" MultiSelection="true" @bind-SelectedValues:after="UpdateCronExpression">
+                            <MudSelectItem T="string" Value='"SUN"'>Sunday</MudSelectItem>
+                            <MudSelectItem T="string" Value='"MON"'>Monday</MudSelectItem>
+                            <MudSelectItem T="string" Value='"TUE"'>Tuesday</MudSelectItem>
+                            <MudSelectItem T="string" Value='"WED"'>Wednesday</MudSelectItem>
+                            <MudSelectItem T="string" Value='"THU"'>Thursday</MudSelectItem>
+                            <MudSelectItem T="string" Value='"FRI"'>Friday</MudSelectItem>
+                            <MudSelectItem T="string" Value='"SAT"'>Saturday</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField T="int" Label="At Hour" @bind-Value="AtHour" Min="0" Max="23" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField T="int" Label="At Minute" @bind-Value="AtMinute" Min="0" Max="59" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                }
+
+                @if (SelectedFrequency == "month")
+                {
+                    <MudItem xs="12" md="3">
+                        <MudSelect T="string" Label="Day Selection" @bind-Value="MonthlyDayType" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression">
+                            <MudSelectItem Value='"specific"'>Specific Day</MudSelectItem>
+                            <MudSelectItem Value='"last"'>Last Day of Month</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudNumericField T="int" Label="Every X Months" @bind-Value=MonthInterval Min="1" Max="12" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                    @if (MonthlyDayType == "specific")
+                    {
+                        <MudItem xs="12" md="4">
+                            <MudNumericField T="int" Label="Day of Month" @bind-Value="DayOfMonth" Min="1" Max="31" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                        </MudItem>
+                    }
+                    <MudItem xs="12" md="4">
+                        <MudNumericField T="int" Label="At Hour" @bind-Value="AtHour" Min="0" Max="23" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField T="int" Label="At Minute" @bind-Value="AtMinute" Min="0" Max="59" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                    </MudItem>
+                }
+
+                @if (SelectedFrequency == "minute")
+                {
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string" Label="Minute Selection" @bind-Value="MinuteType" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression">
+                            <MudSelectItem Value='"every"'>Every Minute</MudSelectItem>
+                            <MudSelectItem Value='"interval"'>Every X Minutes</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    @if (MinuteType == "interval")
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudNumericField T="int" Label="Every X Minutes" @bind-Value="MinuteInterval" Min="1" Max="59" Variant="Variant.Outlined" @bind-Value:after="UpdateCronExpression" />
+                        </MudItem>
+                    }
+                }
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudTextField T="string" Label="Generated Cron Expression" @bind-Value="GeneratedExpression"
+                                  Variant="Variant.Outlined" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" md="4" Class="d-flex align-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UseCronExpression"
+                               Disabled="@(!IsValidExpression)">
+                        Use Expression
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            @if (!string.IsNullOrEmpty(GeneratedExpression))
+            {
+                <MudAlert Severity="@(IsValidExpression? Severity.Success: Severity.Error)" Class="mt-4">
+                    @if (IsValidExpression)
+                    {
+                        <MudText>@ExpressionDescription</MudText>
+                    }
+                    else
+                    {
+                        <MudText>@ValidationError</MudText>
+                    }
+                </MudAlert>
+            }
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+</MudPaper>
+
+@code {
+
+    [Parameter] public EventCallback<CronExpressionEventArgs> OnCronExpressionSelected { get; set; }
+    [Parameter] public string? InitialCronExpression { get; set; }
+
+    [Inject] public required ScheduleService ScheduleService { get; set; }
+
+    private string SelectedFrequency = "day";
+    private int AtMinute = 0;
+    private int AtHour = 9;
+    private string MinuteType = "every"; // "every" or "interval"
+    private int MinuteInterval = 1; // Every X minutes
+    private string HourlyType = "every"; // "every" or "interval"
+    private int HourInterval = 1; // Every X hours
+    private IEnumerable<string> SelectedDaysOfWeek = new[] { "MON" }; // Default to Monday
+    private int DayOfMonth = 1;
+    private string MonthlyDayType = "specific"; // "specific" or "last"
+    private int MonthInterval = 1;
+
+    private string GeneratedExpression = "";
+    private bool IsValidExpression = false;
+    private string ExpressionDescription = "";
+    private string ValidationError = "";
+    private List<DateTime> NextExecutions = new();
+
+    private bool panelExpanded = false;
+
+    protected override void OnInitialized() => UpdateCronExpression();
+
+    private void UpdateCronExpression()
+    {
+        GeneratedExpression = SelectedFrequency switch
+        {
+            "minute" => MinuteType == "interval"
+                ? $"0 */{MinuteInterval} * * * ?"
+                : "0 * * * * ?",
+            "hour" => HourlyType == "interval"
+                ? $"0 {AtMinute} */{HourInterval} * * ?"
+                : $"0 {AtMinute} * * * ?",
+            "day" => $"0 {AtMinute} {AtHour} * * ?",
+            "week" => $"0 {AtMinute} {AtHour} ? * {string.Join(",", SelectedDaysOfWeek)}",
+            "month" => MonthlyDayType == "last"
+                ? $"0 {AtMinute} {AtHour} L */{MonthInterval} ?"
+                : $"0 {AtMinute} {AtHour} {DayOfMonth} */{MonthInterval} ?",
+            _ => ""
+        };
+
+        ValidateExpression();
+        StateHasChanged();
+    }
+
+    private void ValidateExpression()
+    {
+        if (string.IsNullOrEmpty(GeneratedExpression))
+        {
+            IsValidExpression = false;
+            return;
+        }
+
+        try
+        {
+            Quartz.CronExpression.ValidateExpression(GeneratedExpression);
+            IsValidExpression = true;
+            ValidationError = "";
+
+            ExpressionDescription = ExpressionDescriptor.GetDescription(GeneratedExpression, 
+                new Options() { ThrowExceptionOnParseError = false });
+        }
+        catch (Exception ex)
+        {
+            IsValidExpression = false;
+            ValidationError = $"Invalid expression: {ex.Message}";
+        }
+    }
+
+    private async Task UseCronExpression()
+    {
+        if (IsValidExpression && OnCronExpressionSelected.HasDelegate)
+        {
+            await OnCronExpressionSelected.InvokeAsync(new CronExpressionEventArgs
+            { 
+                CronExpression = GeneratedExpression
+            });
+        }
+    }
+
+    public class CronExpressionEventArgs 
+    { 
+        public required string CronExpression { get; set; }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,459 @@
+﻿@page "/schedules"
+@using PuddleJobs.Core.DTOs
+@using PuddleJobs.Web.Services
+@using CronExpressionDescriptor
+@using PuddleJobs.Web.Components
+@using static PuddleJobs.Web.Components.CronExpressionBuilder
+
+    <MudGrid>
+        <!-- Create Schedule Card -->
+        <MudItem xs="12" lg="8">
+            <MudCard Elevation="2" Class="rounded-lg">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Primary" Size="Size.Medium" />
+                            <MudText Typo="Typo.h6">Create New Schedule</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                
+                <MudCardContent>
+                <MudForm Model="NewScheduleDto" @bind-IsValid=IsFormValid>
+                        <MudStack Spacing="4">
+                            <MudTextField T="string" 
+                                        Label="Schedule Name" 
+                                        @bind-Value="NewScheduleDto.Name" 
+                                        Required 
+                                        Variant="Variant.Outlined"
+                                        Placeholder="Enter a descriptive name for your schedule" />
+
+                            <MudGrid>
+                                <MudItem xs="12" md="6">
+                                    <MudDatePicker @bind-Date=startDate
+                                                   Label="Start Date"
+                                                   Variant="Variant.Outlined" Clearable
+                                                   Placeholder="Optional start date of this schedule" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTimePicker @bind-Time=startTime
+                                                   Label="Start Time"
+                                                   Variant="Variant.Outlined" Clearable
+                                                   Placeholder="Optional start time of this schedule" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudDatePicker @bind-Date=endDate
+                                                   Label="End Date"
+                                                   Variant="Variant.Outlined" Clearable
+                                                   Placeholder="Optional end date of this schedule" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTimePicker @bind-Time=endTime
+                                                   Label="End Time"
+                                                   Variant="Variant.Outlined" Clearable
+                                                   Placeholder="Optional end time of this schedule" />
+                                </MudItem>
+                            </MudGrid>
+                            
+                            <CronExpressionBuilder OnCronExpressionSelected="OnCronExpressionSelected" />
+
+                            <MudStack Spacing="2">
+                                <MudTextField T="string" 
+                                            Label="Cron Expression" 
+                                            @bind-Value="NewScheduleDto.CronExpression"
+                                            Validation="Quartz.CronExpression.IsValidExpression(NewScheduleDto.CronExpression)"
+                                            Variant="Variant.Outlined"
+                                            Placeholder="0 0 9 * * ?"
+                                            HelperText="Enter a valid Quartz.NET cron expression"
+                                            Adornment="Adornment.End"
+                                            AdornmentIcon="@Icons.Material.Filled.Schedule" />
+                                
+                                @if (!string.IsNullOrEmpty(NewScheduleDto.CronExpression))
+                                {
+                                    <MudAlert Severity="Severity.Info" Dense>
+                                        <MudText Typo="Typo.body2">
+                                            @ExpressionDescriptor.GetDescription(NewScheduleDto.CronExpression, new Options() { ThrowExceptionOnParseError = false })
+                                        </MudText>
+                                    </MudAlert>
+                                }
+                            </MudStack>
+                        </MudStack>
+                    </MudForm>
+                </MudCardContent>
+                
+                <MudCardActions Class="px-6 pb-4">
+                    <MudStack Row Spacing="2" Justify="Justify.SpaceBetween" Style="width: 100%">
+                        <MudButton Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Clear"
+                                   OnClick="ClearForm">
+                            Clear
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" 
+                                 Color="Color.Primary"
+                                 StartIcon="@Icons.Material.Filled.Save"
+                                 Disabled="@(!IsFormValid || isCreating)"
+                                 OnClick="CreateSchedule">
+                            @(isCreating ? "Creating..." : "Create Schedule")
+                        </MudButton>
+                    </MudStack>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <!-- Quick Actions Sidebar -->
+        <MudItem xs="12" lg="4">
+            <MudStack Spacing="3">
+                <!-- Quick Templates -->
+                <MudCard Elevation="1">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Warning" />
+                                <MudText Typo="Typo.subtitle1">Quick Templates</MudText>
+                            </MudStack>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pt-0">
+                        <MudStack Spacing="2" AlignItems="AlignItems.Start">
+                            <MudButton Variant="Variant.Text" 
+                                     FullWidth="true" 
+                                     StartIcon="@Icons.Material.Filled.Schedule"
+                                     OnClick='() => UseTemplate("0 0 9 * * ?", "Daily at 9 AM")'>
+                                Daily at 9 AM
+                            </MudButton>
+                            <MudButton Variant="Variant.Text" 
+                                     FullWidth="true" 
+                                     StartIcon="@Icons.Material.Filled.Schedule"
+                                     OnClick='() => UseTemplate("0 0 9 ? * MON", "Weekly on Monday")'>
+                                Weekly on Monday
+                            </MudButton>
+                            <MudButton Variant="Variant.Text" 
+                                     FullWidth="true" 
+                                     StartIcon="@Icons.Material.Filled.Schedule"
+                                     OnClick='() => UseTemplate("0 0 9 1 * ?", "Monthly on 1st")'>
+                                Monthly on 1st
+                            </MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Help Card -->
+                <MudCard Elevation="1">
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Help" Color="Color.Info" />
+                                <MudText Typo="Typo.subtitle1">Need Help?</MudText>
+                            </MudStack>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Use the visual builder or check Quartz.NET documentation for cron expression examples.
+                            </MudText>
+                            <MudButton Variant="Variant.Text" 
+                                     Color="Color.Info" 
+                                     StartIcon="@Icons.Material.Filled.OpenInNew"
+                                     Size="Size.Small"
+                                     Href="https://www.quartz-scheduler.net/documentation/quartz-2.x/tutorial/crontriggers.html#cron-expressions"
+                                     Target="_blank">
+                                View Documentation
+                            </MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Existing Schedules Section -->
+    <MudGrid Class="pt-4">
+        <MudItem xs="12">
+            <MudCard Elevation="2" Class="rounded-lg">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.List" Color="Color.Primary" Size="Size.Medium" />
+                            <MudText Typo="Typo.h6">Existing Schedules</MudText>
+                            <MudSpacer />
+                            <MudButton Variant="Variant.Text" 
+                                     StartIcon="@Icons.Material.Filled.Refresh"
+                                     OnClick="LoadSchedules"
+                                     Loading="@isLoadingSchedules">
+                                Refresh
+                            </MudButton>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                
+                <MudCardContent>
+                    @if (isLoadingSchedules)
+                    {
+                        <MudProgressLinear Indeterminate="true" />
+                        <MudText Align="Align.Center" Class="mt-4">Loading schedules...</MudText>
+                    }
+                    else if (!schedules.Any())
+                    {
+                        <MudAlert Severity="Severity.Info" Class="rounded">
+                            <MudText>No schedules found. Create your first schedule above!</MudText>
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudTable Items="@schedules" Hover="true" Dense="true">
+                            <HeaderContent>
+                                <MudTh>Name</MudTh>
+                                <MudTh>Cron Expression</MudTh>
+                                <MudTh>Description</MudTh>
+                                <MudTh>Status</MudTh>
+                                <MudTh>Created</MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Name">
+                                    <MudText Typo="Typo.body2" Class="font-weight-medium">@context.Name</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Cron Expression">
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info">@context.CronExpression</MudChip>
+                                </MudTd>
+                                <MudTd DataLabel="Description">
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2">
+                                            @ExpressionDescriptor.GetDescription(context.CronExpression, new Options() { ThrowExceptionOnParseError = false })
+                                        </MudText>
+                                        @if (context.StartDate.HasValue || context.EndDate.HasValue)
+                                        {
+                                            <MudText Typo="Typo.caption">
+                                                @(context.StartDate.HasValue && !context.EndDate.HasValue ? $"Starting {context.StartDate.Value:MMM dd, yyyy hh:mm tt}" :
+                                                !context.StartDate.HasValue && context.EndDate.HasValue ? $"Ending {context.EndDate.Value:MMM dd, yyyy hh:mm tt}" :
+                                                context.StartDate.HasValue && context.EndDate.HasValue ? $"From {context.StartDate.Value:MMM dd, yyyy hh:mm tt} to {context.EndDate.Value:MMM dd, yyyy hh:mm tt}" : "")
+                                            </MudText>
+                                        }
+                                    </MudStack>
+                                </MudTd>
+                                <MudTd DataLabel="Status">
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(context.IsActive ? Color.Success : Color.Default)"
+                                           Icon="@(context.IsActive ? Icons.Material.Filled.PlayArrow : Icons.Material.Filled.Pause)">
+                                        @(context.IsActive ? "Active" : "Paused")
+                                    </MudChip>
+                                </MudTd>
+                                <MudTd DataLabel="Created">
+                                    <MudText Typo="Typo.body2">@context.CreatedAt.ToString("MMM dd, yyyy")</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Actions">
+                                    <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
+                                        @if (context.IsActive)
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Pause" 
+                                                         Color="Color.Warning" 
+                                                         Size="Size.Small"
+                                                         OnClick="() => PauseSchedule(context.Id)"
+                                                         Title="Pause Schedule" />
+                                        }
+                                        else
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" 
+                                                         Color="Color.Success" 
+                                                         Size="Size.Small"
+                                                         OnClick="() => ResumeSchedule(context.Id)"
+                                                         Title="Resume Schedule" />
+                                        }
+
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                                     Color="Color.Primary" 
+                                                     Size="Size.Small"
+                                                     OnClick="() => OpenEditModal(context)"
+                                                     Title="Edit Schedule" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                     Color="Color.Error" 
+                                                     Size="Size.Small"
+                                                     OnClick="() => DeleteSchedule(context.Id)"
+                                                     Title="Delete Schedule" />
+                                    </MudButtonGroup>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+@code 
+{
+    [Inject] public required ScheduleService ScheduleService { get; set; }
+    [Inject] public required ISnackbar Snackbar { get; set; }
+    [Inject] public required IDialogService DialogService { get; set; }
+
+    private CreateScheduleDto NewScheduleDto = new();
+    private bool isCreating = false;
+
+    private DateTime? startDate;
+    private TimeSpan? startTime;
+
+    private DateTime? endDate;
+    private TimeSpan? endTime;
+
+    private List<ScheduleDto> schedules = new();
+    private bool isLoadingSchedules = false;
+
+    private bool IsFormValid { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        AppBarHelper.Text = "Schedules";
+        AppBarHelper.Description = "Create and manage your job schedules";
+        await LoadSchedules();
+    }
+
+    private async Task LoadSchedules()
+    {
+        isLoadingSchedules = true;
+
+        try
+        {
+            schedules = await ScheduleService.GetSchedulesAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading schedules: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoadingSchedules = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task PauseSchedule(int id)
+    {
+        try
+        {
+            var success = await ScheduleService.PauseScheduleAsync(id);
+            if (success)
+            {
+                Snackbar.Add("Schedule paused successfully!", Severity.Success);
+                await LoadSchedules();
+            }
+            else
+            {
+                Snackbar.Add("Failed to pause schedule.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error pausing schedule: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ResumeSchedule(int id)
+    {
+        try
+        {
+            var success = await ScheduleService.ResumeScheduleAsync(id);
+            if (success)
+            {
+                Snackbar.Add("Schedule resumed successfully!", Severity.Success);
+                await LoadSchedules();
+            }
+            else
+            {
+                Snackbar.Add("Failed to resume schedule.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error resuming schedule: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteSchedule(int id)
+    {
+        try
+        {
+            var success = await ScheduleService.DeleteScheduleAsync(id);
+            if (success)
+            {
+                Snackbar.Add("Schedule deleted successfully!", Severity.Success);
+                await LoadSchedules();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete schedule.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting schedule: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void OnCronExpressionSelected(CronExpressionEventArgs args)
+    {
+        NewScheduleDto.CronExpression = args.CronExpression;
+        StateHasChanged();
+    }
+
+    private async Task OpenEditModal(ScheduleDto schedule)
+    {
+        var editModal = await DialogService.ShowAsync<EditScheduleDialog>(
+            "Edit Schedule",
+            new DialogParameters
+            {
+                { "Schedule", schedule },
+            },
+            new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Large, FullWidth = true }
+        );
+
+        var result = await editModal.Result;
+        if (result?.Canceled ?? true)
+            return;
+
+        await LoadSchedules();
+    }
+
+    private void UseTemplate(string cronExpression, string name)
+    {
+        NewScheduleDto = new();
+        NewScheduleDto.CronExpression = cronExpression;
+        NewScheduleDto.Name = name;
+        StateHasChanged();
+    }
+
+    private void ClearForm()
+    {
+        NewScheduleDto = new();
+        StateHasChanged();
+    }
+
+    private async Task CreateSchedule()
+    {
+        if (!IsFormValid || isCreating)
+            return;
+
+        isCreating = true;
+        try
+        {
+            NewScheduleDto.StartDate = startDate.HasValue ? startDate.Value.Date + (startTime ?? TimeSpan.Zero) : null;
+            NewScheduleDto.EndDate = endDate.HasValue ? endDate.Value.Date + (endTime ?? TimeSpan.Zero) : null;
+
+            var result = await ScheduleService.CreateScheduleAsync(NewScheduleDto);
+            if (result != null)
+            {
+                Snackbar.Add($"Schedule '{result.Name}' created successfully!", Severity.Success);
+                ClearForm();
+                await LoadSchedules(); // Refresh the list
+            }
+            else
+            {
+                Snackbar.Add("Failed to create schedule. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating schedule: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+}

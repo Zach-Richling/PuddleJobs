@@ -9,3 +9,12 @@
 </div>
 
 Welcome to your new app.
+
+@code 
+{
+    protected override void OnParametersSet()
+    {
+        AppBarHelper.Text = "Dashboard";
+        AppBarHelper.Description = "";
+    }
+}

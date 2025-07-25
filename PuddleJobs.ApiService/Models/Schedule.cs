@@ -17,7 +17,10 @@ public class Schedule
     [Required]
     [MaxLength(255)]
     public string CronExpression { get; set; } = string.Empty;
-    
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+
     public bool IsActive { get; set; } = true;
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -36,6 +39,8 @@ public class Schedule
             Name = schedule.Name,
             Description = schedule.Description,
             CronExpression = schedule.CronExpression,
+            StartDate = schedule.StartDate,
+            EndDate = schedule.EndDate,
             IsActive = schedule.IsActive,
             CreatedAt = schedule.CreatedAt
         };

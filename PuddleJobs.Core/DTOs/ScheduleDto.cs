@@ -8,6 +8,8 @@ public class ScheduleDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string CronExpression { get; set; } = string.Empty;
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
 }
@@ -23,13 +25,20 @@ public class CreateScheduleDto
     
     [Required]
     public string CronExpression { get; set; } = string.Empty;
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
 }
 
 public class UpdateScheduleDto
 {
+    [Required]
+    public string Name { get; set; } = "";
     [MaxLength(1000)]
     public string? Description { get; set; }
     public string? CronExpression { get; set; }
-    
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+
     public bool? IsActive { get; set; }
 } 

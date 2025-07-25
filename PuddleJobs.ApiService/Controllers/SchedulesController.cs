@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Models;
 using PuddleJobs.ApiService.Services;
+using PuddleJobs.Core;
 
 namespace PuddleJobs.ApiService.Controllers;
 

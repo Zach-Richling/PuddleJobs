@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+using PuddleJobs.Web.Services;
 
 namespace PuddleJobs.Web
 {
@@ -32,8 +33,10 @@ namespace PuddleJobs.Web
                 builder.Configuration.Bind("Keycloak", options.ProviderOptions);
             });
 
-            var app = builder.Build();
-            await app.RunAsync();
+            builder.Services.AddScoped<JobService>();
+            builder.Services.AddScoped<ScheduleService>();
+
+            await builder.Build().RunAsync();
         }
     }
 }

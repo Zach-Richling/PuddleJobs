@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PuddleJobs.ApiService.Data;
+using PuddleJobs.Core;
 using PuddleJobs.Core.DTOs;
 using PuddleJobs.ApiService.Models;
 
@@ -65,6 +66,8 @@ public class ScheduleService : IScheduleService
             Name = dto.Name,
             Description = dto.Description,
             CronExpression = dto.CronExpression,
+            StartDate = dto.StartDate,
+            EndDate = dto.EndDate,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -79,12 +82,15 @@ public class ScheduleService : IScheduleService
     {
         var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.Id == id) 
             ?? throw new InvalidOperationException("Schedule not found");
-        
+
+        schedule.Name = dto.Name;
         schedule.Description = dto.Description;
+        schedule.StartDate = dto.StartDate;
+        schedule.EndDate = dto.EndDate;
 
         if (dto.CronExpression != null)
         {
-            // Validate Cron expression if provided
+            // Validate Cron expression if provided 
             var validationResult = _cronValidationService.ValidateCronExpression(dto.CronExpression);
             if (!validationResult.IsValid)
             {
@@ -139,7 +145,10 @@ public class ScheduleService : IScheduleService
         var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId) 
             ?? throw new InvalidOperationException($"Schedule with ID {scheduleId} not found.");
 
+        schedule.IsActive = false;
+
         await _jobSchedulerService.PauseScheduleAsync(scheduleId);
+        await _context.SaveChangesAsync();
     }
 
     public async Task ResumeScheduleAsync(int scheduleId)
@@ -147,6 +156,8 @@ public class ScheduleService : IScheduleService
         var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId) 
             ?? throw new InvalidOperationException($"Schedule with ID {scheduleId} not found.");
 
+        schedule.IsActive = true;
         await _jobSchedulerService.ResumeScheduleAsync(scheduleId);
+        await _context.SaveChangesAsync();
     }
 } 

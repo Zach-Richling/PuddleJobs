@@ -1,4 +1,4 @@
-namespace PuddleJobs.ApiService.Models;
+namespace PuddleJobs.Core;
 
 public class CronValidationResult
 {
